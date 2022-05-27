@@ -1,0 +1,28 @@
+syntax = "proto3";
+
+option go_package="github.com/althk/ganache/cacheserver/proto";
+
+package proto;
+
+import public "google/protobuf/empty.proto";
+
+service Cache {
+	rpc Get(GetRequest) returns (GetResponse) {}
+	rpc Set(SetRequest) returns (google.protobuf.Empty) {}
+}
+
+message GetRequest {
+	string namespace = 1;
+	string key = 2;
+}
+
+message GetResponse {
+	bytes data = 1;
+}
+
+message SetRequest {
+	string namespace = 1;
+	string key = 2;
+	bytes data = 3;
+	bool global = 4;
+}
