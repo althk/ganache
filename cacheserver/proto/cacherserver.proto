@@ -29,9 +29,9 @@ message SetRequest {
 }
 
 message StatsResponse {
-	uint64 get_request_count = 1;
-	uint64 set_request_count = 2;
-	uint64 total_request_count = 3;
+	uint64 get_req_count = 1;
+	uint64 set_req_count = 2;
+	uint64 total_req_count = 3;
 	uint64 cache_hit_ratio = 4;
 	uint64 total_cache_size_bytes = 5; // in bytes
 }
