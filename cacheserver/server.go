@@ -29,7 +29,7 @@ func (s *server) Get(ctx context.Context, in *pb.GetRequest) (*pb.GetResponse, e
 		Str("k", in.Key).
 		Send()
 	atomic.AddUint64(&s.nofGets, 1)
-	v, e := s.c.Get(in.Key)
+	v, e := s.c.Get(s.key(in.Namespace, in.Key))
 	if !e {
 		atomic.AddUint64(&s.nofMisses, 1)
 		return nil, status.Errorf(codes.NotFound, "Cache miss for key %v", in.Key)
@@ -38,9 +38,13 @@ func (s *server) Get(ctx context.Context, in *pb.GetRequest) (*pb.GetResponse, e
 }
 
 func (s *server) Set(ctx context.Context, in *pb.SetRequest) (*emptypb.Empty, error) {
-	s.c.Set(in.Key, in.Data)
+	s.c.Set(s.key(in.Namespace, in.Key), in.Data)
 	atomic.AddUint64(&s.nofSets, 1)
 	return &emptypb.Empty{}, nil
+}
+
+func (s *server) key(ns, key string) string {
+	return ns + key
 }
 
 func newCacheServer() *server {
