@@ -9,6 +9,7 @@ import public "google/protobuf/empty.proto";
 service Cache {
 	rpc Get(GetRequest) returns (GetResponse) {}
 	rpc Set(SetRequest) returns (google.protobuf.Empty) {}
+	rpc Stats(google.protobuf.Empty) returns (StatsResponse) {}
 }
 
 message GetRequest {
@@ -25,4 +26,12 @@ message SetRequest {
 	string key = 2;
 	bytes data = 3;
 	bool global = 4;
+}
+
+message StatsResponse {
+	uint64 get_request_count = 1;
+	uint64 set_request_count = 2;
+	uint64 total_request_count = 3;
+	uint64 cache_hit_ratio = 4;
+	uint64 total_cache_size_bytes = 5; // in bytes
 }

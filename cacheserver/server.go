@@ -51,6 +51,15 @@ func (s *server) Set(ctx context.Context, in *pb.SetRequest) (*emptypb.Empty, er
 	return &emptypb.Empty{}, nil
 }
 
+func (s *server) Stats(ctx context.Context, _ *emptypb.Empty) (*pb.StatsResponse, error) {
+	return &pb.StatsResponse{
+		GetReqCount:         s.nofGets,
+		SetReqCount:         s.nofSets,
+		TotalReqCount:       s.nofReqs,
+		TotalCacheSizeBytes: s.cacheSize,
+	}, nil
+}
+
 func (s *server) key(ns, key string) string {
 	return ns + key
 }
