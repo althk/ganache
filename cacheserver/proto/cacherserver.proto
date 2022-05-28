@@ -34,4 +34,5 @@ message StatsResponse {
 	uint64 total_req_count = 3;
 	uint64 cache_hit_ratio = 4;
 	uint64 total_cache_size_bytes = 5; // in bytes
+	int32 shard_number = 6;
 }

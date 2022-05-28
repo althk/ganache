@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"sync/atomic"
 
 	pb "github.com/althk/ganache/cacheserver/proto"
@@ -18,17 +19,18 @@ import (
 type server struct {
 	pb.UnimplementedCacheServer
 	h         *health.Server
-	c         cmap.ConcurrentMap[[]byte]
+	c         cmap.ConcurrentMap[[]byte] // cache store
 	nofGets   uint64
 	nofSets   uint64
 	nofMisses uint64
 	nofReqs   uint64
 	cacheSize uint64 // total cache size in bytes, only values are counted.
+	shardNum  int32
 	// TODO: add counters by namespaces
 }
 
 func (s *server) Get(ctx context.Context, in *pb.GetRequest) (*pb.GetResponse, error) {
-	log.Info().
+	log.Debug().
 		Str("m", "get").
 		Str("ns", in.Namespace).
 		Str("k", in.Key).
@@ -57,17 +59,19 @@ func (s *server) Stats(ctx context.Context, _ *emptypb.Empty) (*pb.StatsResponse
 		SetReqCount:         s.nofSets,
 		TotalReqCount:       s.nofReqs,
 		TotalCacheSizeBytes: s.cacheSize,
+		ShardNumber:         s.shardNum,
 	}, nil
 }
 
 func (s *server) key(ns, key string) string {
-	return ns + key
+	return fmt.Sprintf("%s%s", ns, key)
 }
 
-func newCacheServer(h *health.Server) *server {
+func newCacheServer(h *health.Server, n int32) *server {
 	return &server{
-		c: cmap.New[[]byte](),
-		h: h,
+		c:        cmap.New[[]byte](),
+		h:        h,
+		shardNum: n,
 	}
 }
 
