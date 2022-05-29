@@ -13,20 +13,24 @@ import (
 	"google.golang.org/grpc/health"
 	hpb "google.golang.org/grpc/health/grpc_health_v1"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/anypb"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
 type server struct {
 	pb.UnimplementedCacheServer
 	h         *health.Server
-	c         cmap.ConcurrentMap[[]byte] // cache store
+	c         cmap.ConcurrentMap[interface{}] // cache store
 	nofGets   uint64
 	nofSets   uint64
 	nofMisses uint64
 	nofReqs   uint64
 	cacheSize uint64 // total cache size in bytes, only values are counted.
 	shardNum  int32
-	// TODO: add counters by namespaces
+	// TODO: add the following features (no particular order):
+	// 1. counters by namespaces
+	// 2. add max cache size
+	// 3. eviction policy (LRU and expiry)
 }
 
 func (s *server) Get(ctx context.Context, in *pb.GetRequest) (*pb.GetResponse, error) {
@@ -35,21 +39,27 @@ func (s *server) Get(ctx context.Context, in *pb.GetRequest) (*pb.GetResponse, e
 		Str("ns", in.Namespace).
 		Str("k", in.Key).
 		Send()
-	atomic.AddUint64(&s.nofGets, 1)
-	atomic.AddUint64(&s.nofReqs, 1)
+	go func() {
+		atomic.AddUint64(&s.nofGets, 1)
+		atomic.AddUint64(&s.nofReqs, 1)
+	}()
 	v, e := s.c.Get(s.key(in.Namespace, in.Key))
 	if !e {
 		atomic.AddUint64(&s.nofMisses, 1)
 		return nil, status.Errorf(codes.NotFound, "Cache miss for key %v", in.Key)
 	}
-	return &pb.GetResponse{Data: v}, nil
+	return &pb.GetResponse{Data: v.(*anypb.Any)}, nil
 }
 
 func (s *server) Set(ctx context.Context, in *pb.SetRequest) (*emptypb.Empty, error) {
+	go func() {
+		atomic.AddUint64(&s.nofReqs, 1)
+	}()
 	s.c.Set(s.key(in.Namespace, in.Key), in.Data)
-	atomic.AddUint64(&s.nofSets, 1)
-	atomic.AddUint64(&s.cacheSize, uint64(len(in.Data)))
-	atomic.AddUint64(&s.nofReqs, 1)
+	go func() {
+		atomic.AddUint64(&s.nofSets, 1)
+		atomic.AddUint64(&s.cacheSize, uint64(len(in.Data.Value)))
+	}()
 	return &emptypb.Empty{}, nil
 }
 
@@ -59,6 +69,7 @@ func (s *server) Stats(ctx context.Context, _ *emptypb.Empty) (*pb.StatsResponse
 		SetReqCount:         s.nofSets,
 		TotalReqCount:       s.nofReqs,
 		TotalCacheSizeBytes: s.cacheSize,
+		TotalKeysCount:      uint64(s.c.Count()),
 		ShardNumber:         s.shardNum,
 	}, nil
 }
@@ -69,7 +80,7 @@ func (s *server) key(ns, key string) string {
 
 func newCacheServer(h *health.Server, n int32) *server {
 	return &server{
-		c:        cmap.New[[]byte](),
+		c:        cmap.New[interface{}](),
 		h:        h,
 		shardNum: n,
 	}

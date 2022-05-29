@@ -4,7 +4,8 @@ option go_package="github.com/althk/ganache/cacheserver/proto";
 
 package proto;
 
-import public "google/protobuf/empty.proto";
+import "google/protobuf/any.proto";
+import "google/protobuf/empty.proto";
 
 service Cache {
 	rpc Get(GetRequest) returns (GetResponse) {}
@@ -18,13 +19,13 @@ message GetRequest {
 }
 
 message GetResponse {
-	bytes data = 1;
+	google.protobuf.Any data = 1;
 }
 
 message SetRequest {
 	string namespace = 1;
 	string key = 2;
-	bytes data = 3;
+	google.protobuf.Any data = 3;
 	bool global = 4;
 }
 
@@ -34,5 +35,6 @@ message StatsResponse {
 	uint64 total_req_count = 3;
 	uint64 cache_hit_ratio = 4;
 	uint64 total_cache_size_bytes = 5; // in bytes
-	int32 shard_number = 6;
+	uint64 total_keys_count = 6;
+	int32 shard_number = 7;
 }

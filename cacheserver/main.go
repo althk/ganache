@@ -21,6 +21,7 @@ var debug = flag.Bool("debug", false, "enable debug logging")
 
 func main() {
 	flag.Parse()
+
 	zerolog.SetGlobalLevel(zerolog.InfoLevel)
 	if *debug {
 		zerolog.SetGlobalLevel(zerolog.DebugLevel)
