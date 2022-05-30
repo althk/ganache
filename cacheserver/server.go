@@ -6,7 +6,7 @@ import (
 	"sync/atomic"
 
 	pb "github.com/althk/ganache/cacheserver/proto"
-	cmap "github.com/orcaman/concurrent-map/v2"
+	cp "github.com/althk/ganache/cacheserver/strategy"
 	"github.com/rs/zerolog/log"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -17,20 +17,25 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
+type CachingStrategy interface {
+	Get(ctx context.Context, key string) (*anypb.Any, bool)
+	Set(ctx context.Context, key string, val *anypb.Any) (int64, error)
+	KeysCount(ctx context.Context) int64
+	CurrSize(ctx context.Context) int64 // size of current cache in bytes
+}
+
 type server struct {
 	pb.UnimplementedCacheServer
 	h         *health.Server
-	c         cmap.ConcurrentMap[interface{}] // cache store
+	c         CachingStrategy // cache store
 	nofGets   uint64
 	nofSets   uint64
 	nofMisses uint64
 	nofReqs   uint64
-	cacheSize uint64 // total cache size in bytes, only values are counted.
 	shardNum  int32
 	// TODO: add the following features (no particular order):
 	// 1. counters by namespaces
-	// 2. add max cache size
-	// 3. eviction policy (LRU and expiry)
+	// 2. expiration policy
 }
 
 func (s *server) Get(ctx context.Context, in *pb.GetRequest) (*pb.GetResponse, error) {
@@ -43,22 +48,21 @@ func (s *server) Get(ctx context.Context, in *pb.GetRequest) (*pb.GetResponse, e
 		atomic.AddUint64(&s.nofGets, 1)
 		atomic.AddUint64(&s.nofReqs, 1)
 	}()
-	v, e := s.c.Get(s.key(in.Namespace, in.Key))
+	v, e := s.c.Get(ctx, s.key(in.Namespace, in.Key))
 	if !e {
 		atomic.AddUint64(&s.nofMisses, 1)
 		return nil, status.Errorf(codes.NotFound, "Cache miss for key %v", in.Key)
 	}
-	return &pb.GetResponse{Data: v.(*anypb.Any)}, nil
+	return &pb.GetResponse{Data: v}, nil
 }
 
 func (s *server) Set(ctx context.Context, in *pb.SetRequest) (*emptypb.Empty, error) {
 	go func() {
 		atomic.AddUint64(&s.nofReqs, 1)
 	}()
-	s.c.Set(s.key(in.Namespace, in.Key), in.Data)
+	s.c.Set(ctx, s.key(in.Namespace, in.Key), in.Data)
 	go func() {
 		atomic.AddUint64(&s.nofSets, 1)
-		atomic.AddUint64(&s.cacheSize, uint64(len(in.Data.Value)))
 	}()
 	return &emptypb.Empty{}, nil
 }
@@ -68,8 +72,8 @@ func (s *server) Stats(ctx context.Context, _ *emptypb.Empty) (*pb.StatsResponse
 		GetReqCount:         s.nofGets,
 		SetReqCount:         s.nofSets,
 		TotalReqCount:       s.nofReqs,
-		TotalCacheSizeBytes: s.cacheSize,
-		TotalKeysCount:      uint64(s.c.Count()),
+		TotalCacheSizeBytes: uint64(s.c.CurrSize(ctx)),
+		TotalKeysCount:      uint64(s.c.KeysCount(ctx)),
 		ShardNumber:         s.shardNum,
 	}, nil
 }
@@ -80,7 +84,7 @@ func (s *server) key(ns, key string) string {
 
 func newCacheServer(h *health.Server, n int32) *server {
 	return &server{
-		c:        cmap.New[interface{}](),
+		c:        cp.NewLRUCache(*maxCacheBytes),
 		h:        h,
 		shardNum: n,
 	}
