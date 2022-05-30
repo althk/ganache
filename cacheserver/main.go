@@ -15,9 +15,11 @@ import (
 	hpb "google.golang.org/grpc/health/grpc_health_v1"
 )
 
-var port = flag.Int("port", 40001, "cache server port")
+var port = flag.Int("port", 0, "cache server port, defaults to 0 which means any available port")
 var shard = flag.Int("shard", -1, "shard number for key distribution")
+var etcdSpec = flag.String("etcd_server", "", "address of etcd service in the form host:port")
 var debug = flag.Bool("debug", false, "enable debug logging")
+var maxCacheBytes = flag.Int64("max_cache_bytes", 1000000000, "max size oftotal cache in bytes, defaults to 1GiB")
 
 func main() {
 	flag.Parse()
