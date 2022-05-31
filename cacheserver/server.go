@@ -7,9 +7,11 @@ import (
 
 	pb "github.com/althk/ganache/cacheserver/proto"
 	cp "github.com/althk/ganache/cacheserver/strategy"
+	csmpb "github.com/althk/ganache/csm/proto"
 	"github.com/rs/zerolog/log"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/health"
 	hpb "google.golang.org/grpc/health/grpc_health_v1"
 	"google.golang.org/grpc/status"
@@ -90,7 +92,29 @@ func newCacheServer(h *health.Server, n int32) *server {
 	}
 }
 
-func registerCacheServer(s *grpc.Server, cs *server) {
+func registerCacheServer(s *grpc.Server, cs *server, addr string) {
 	pb.RegisterCacheServer(s, cs)
+	err := registerEndpoint(*csmSpec, *shard, addr)
+	if err != nil {
+		log.Fatal().Msgf("Registration with Shard mgr failed: %v", err)
+	}
 	cs.h.SetServingStatus("cs", hpb.HealthCheckResponse_SERVING)
+}
+
+func registerEndpoint(csmSpec string, shard int, addr string) error {
+	conn, err := grpc.Dial(csmSpec, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		return err
+	}
+	cli := csmpb.NewShardManagerClient(conn)
+	resp, err := cli.RegisterCacheServer(context.Background(), &csmpb.RegisterCacheServerRequest{
+		ServerSpec: addr,
+		Shard:      int64(shard),
+	})
+	if err != nil {
+		return err
+	}
+	log.Info().Msgf("cache server registered at path %v", resp.RegisteredPath)
+	defer conn.Close()
+	return nil
 }
