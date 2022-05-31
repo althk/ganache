@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+option go_package="github.com/althk/ganache/csm/proto";
+
+package proto;
+
+service ShardManager {
+	rpc RegisterCacheServer(RegisterCacheServerRequest) returns (RegisterCacheServerResponse) {}
+}
+
+message RegisterCacheServerRequest {
+	string server_spec = 1;
+	int64 shard = 2;
+}
+
+message RegisterCacheServerResponse {
+	string registered_path = 1;
+}
