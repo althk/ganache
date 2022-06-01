@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net"
 
+	cspb "github.com/althk/ganache/cacheserver/proto"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 
@@ -40,12 +41,14 @@ func main() {
 	hpb.RegisterHealthServer(s, h)
 	reflection.Register(s)
 	r, _ := etcdResolver(*etcdSpec)
+	c := make(map[int]cspb.CacheClient)
+	for i := 0; i < *shards; i++ {
+		c[i], _ = getCacheCli(r, *csResolverPrefix, i)
+	}
 	pb.RegisterCFEServer(s, &server{
-		h:                   h,
-		etcdSpec:            *etcdSpec,
-		cacheResolverPrefix: *csResolverPrefix,
-		shardCount:          *shards,
-		resolver:            r,
+		h:          h,
+		c:          c,
+		shardCount: *shards,
 	})
 
 	log.Info().Msgf("Starting CFE on address %v", lis.Addr().String())

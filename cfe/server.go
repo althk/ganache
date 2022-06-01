@@ -22,11 +22,9 @@ import (
 
 type server struct {
 	pb.UnimplementedCFEServer
-	h                   *health.Server
-	etcdSpec            string
-	cacheResolverPrefix string
-	shardCount          int
-	resolver            resolver.Builder
+	h          *health.Server
+	shardCount int
+	c          map[int]cspb.CacheClient
 }
 
 func (s *server) Get(ctx context.Context, in *pb.GetRequest) (*pb.GetResponse, error) {
@@ -36,10 +34,7 @@ func (s *server) Get(ctx context.Context, in *pb.GetRequest) (*pb.GetResponse, e
 		Str("k", in.Key).
 		Send()
 	i := getShardNum(in.Namespace, in.Key, s.shardCount)
-	c, err := s.getCacheCli(ctx, i)
-	if err != nil {
-		return nil, status.Error(codes.Unavailable, err.Error())
-	}
+	c := s.c[i]
 	r, err := c.Get(ctx, &cspb.GetRequest{
 		Namespace: in.Namespace,
 		Key:       in.Key,
@@ -52,10 +47,7 @@ func (s *server) Get(ctx context.Context, in *pb.GetRequest) (*pb.GetResponse, e
 
 func (s *server) Set(ctx context.Context, in *pb.SetRequest) (*emptypb.Empty, error) {
 	i := getShardNum(in.Namespace, in.Key, s.shardCount)
-	c, err := s.getCacheCli(ctx, i)
-	if err != nil {
-		return nil, status.Error(codes.Unavailable, err.Error())
-	}
+	c := s.c[i]
 	r, err := c.Set(ctx, &cspb.SetRequest{
 		Namespace: in.Namespace,
 		Key:       in.Key,
@@ -72,9 +64,9 @@ func getShardNum(ns, key string, mod int) int {
 	return int(fnv32(k)) % mod
 }
 
-func (s *server) getCacheCli(ctx context.Context, shardNum int) (cspb.CacheClient, error) {
-	ep := strings.Join([]string{"etcd://", s.cacheResolverPrefix, fmt.Sprint(shardNum)}, "/")
-	conn, err := grpc.Dial(ep, grpc.WithResolvers(s.resolver), grpc.WithTransportCredentials(insecure.NewCredentials()))
+func getCacheCli(r resolver.Builder, cacheResolverPrefix string, shardNum int) (cspb.CacheClient, error) {
+	ep := strings.Join([]string{"etcd://", cacheResolverPrefix, fmt.Sprint(shardNum)}, "/")
+	conn, err := grpc.Dial(ep, grpc.WithResolvers(r), grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		return nil, err
 	}
