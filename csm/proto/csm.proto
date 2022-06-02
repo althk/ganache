@@ -2,7 +2,7 @@ syntax = "proto3";
 
 option go_package="github.com/althk/ganache/csm/proto";
 
-package proto;
+package ganache.csm;
 
 service ShardManager {
 	rpc RegisterCacheServer(RegisterCacheServerRequest) returns (RegisterCacheServerResponse) {}

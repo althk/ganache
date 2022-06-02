@@ -38,7 +38,7 @@ func NewCacheClient(cc grpc.ClientConnInterface) CacheClient {
 
 func (c *cacheClient) Get(ctx context.Context, in *GetRequest, opts ...grpc.CallOption) (*GetResponse, error) {
 	out := new(GetResponse)
-	err := c.cc.Invoke(ctx, "/proto.Cache/Get", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/ganache.cs.Cache/Get", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -47,7 +47,7 @@ func (c *cacheClient) Get(ctx context.Context, in *GetRequest, opts ...grpc.Call
 
 func (c *cacheClient) Set(ctx context.Context, in *SetRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	out := new(emptypb.Empty)
-	err := c.cc.Invoke(ctx, "/proto.Cache/Set", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/ganache.cs.Cache/Set", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -56,7 +56,7 @@ func (c *cacheClient) Set(ctx context.Context, in *SetRequest, opts ...grpc.Call
 
 func (c *cacheClient) Stats(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*StatsResponse, error) {
 	out := new(StatsResponse)
-	err := c.cc.Invoke(ctx, "/proto.Cache/Stats", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/ganache.cs.Cache/Stats", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -109,7 +109,7 @@ func _Cache_Get_Handler(srv interface{}, ctx context.Context, dec func(interface
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/proto.Cache/Get",
+		FullMethod: "/ganache.cs.Cache/Get",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(CacheServer).Get(ctx, req.(*GetRequest))
@@ -127,7 +127,7 @@ func _Cache_Set_Handler(srv interface{}, ctx context.Context, dec func(interface
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/proto.Cache/Set",
+		FullMethod: "/ganache.cs.Cache/Set",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(CacheServer).Set(ctx, req.(*SetRequest))
@@ -145,7 +145,7 @@ func _Cache_Stats_Handler(srv interface{}, ctx context.Context, dec func(interfa
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/proto.Cache/Stats",
+		FullMethod: "/ganache.cs.Cache/Stats",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(CacheServer).Stats(ctx, req.(*emptypb.Empty))
@@ -157,7 +157,7 @@ func _Cache_Stats_Handler(srv interface{}, ctx context.Context, dec func(interfa
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var Cache_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "proto.Cache",
+	ServiceName: "ganache.cs.Cache",
 	HandlerType: (*CacheServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{

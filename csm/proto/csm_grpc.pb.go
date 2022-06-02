@@ -35,7 +35,7 @@ func NewShardManagerClient(cc grpc.ClientConnInterface) ShardManagerClient {
 
 func (c *shardManagerClient) RegisterCacheServer(ctx context.Context, in *RegisterCacheServerRequest, opts ...grpc.CallOption) (*RegisterCacheServerResponse, error) {
 	out := new(RegisterCacheServerResponse)
-	err := c.cc.Invoke(ctx, "/proto.ShardManager/RegisterCacheServer", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/ganache.csm.ShardManager/RegisterCacheServer", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -80,7 +80,7 @@ func _ShardManager_RegisterCacheServer_Handler(srv interface{}, ctx context.Cont
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/proto.ShardManager/RegisterCacheServer",
+		FullMethod: "/ganache.csm.ShardManager/RegisterCacheServer",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ShardManagerServer).RegisterCacheServer(ctx, req.(*RegisterCacheServerRequest))
@@ -92,7 +92,7 @@ func _ShardManager_RegisterCacheServer_Handler(srv interface{}, ctx context.Cont
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var ShardManager_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "proto.ShardManager",
+	ServiceName: "ganache.csm.ShardManager",
 	HandlerType: (*ShardManagerServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{

@@ -2,7 +2,7 @@ syntax = "proto3";
 
 option go_package="github.com/althk/ganache/cacheserver/proto";
 
-package proto;
+package ganache.cs;
 
 import "google/protobuf/any.proto";
 import "google/protobuf/empty.proto";

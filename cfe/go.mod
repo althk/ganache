@@ -2,8 +2,6 @@ module github.com/althk/ganache/cfe
 
 go 1.18
 
-replace github.com/althk/ganache/cacheserver => ../cacheserver
-
 require (
 	github.com/althk/ganache/cacheserver v0.0.0-00010101000000-000000000000
 	github.com/rs/zerolog v1.26.1
@@ -27,3 +25,5 @@ require (
 	golang.org/x/text v0.3.7 // indirect
 	google.golang.org/genproto v0.0.0-20220527130721-00d5c0f3be58 // indirect
 )
+
+replace github.com/althk/ganache/cacheserver => ../cacheserver

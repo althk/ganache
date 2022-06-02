@@ -37,7 +37,7 @@ func NewCFEClient(cc grpc.ClientConnInterface) CFEClient {
 
 func (c *cFEClient) Get(ctx context.Context, in *GetRequest, opts ...grpc.CallOption) (*GetResponse, error) {
 	out := new(GetResponse)
-	err := c.cc.Invoke(ctx, "/cfe.proto.CFE/Get", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/ganache.cfe.CFE/Get", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -46,7 +46,7 @@ func (c *cFEClient) Get(ctx context.Context, in *GetRequest, opts ...grpc.CallOp
 
 func (c *cFEClient) Set(ctx context.Context, in *SetRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	out := new(emptypb.Empty)
-	err := c.cc.Invoke(ctx, "/cfe.proto.CFE/Set", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/ganache.cfe.CFE/Set", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -95,7 +95,7 @@ func _CFE_Get_Handler(srv interface{}, ctx context.Context, dec func(interface{}
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/cfe.proto.CFE/Get",
+		FullMethod: "/ganache.cfe.CFE/Get",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(CFEServer).Get(ctx, req.(*GetRequest))
@@ -113,7 +113,7 @@ func _CFE_Set_Handler(srv interface{}, ctx context.Context, dec func(interface{}
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/cfe.proto.CFE/Set",
+		FullMethod: "/ganache.cfe.CFE/Set",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(CFEServer).Set(ctx, req.(*SetRequest))
@@ -125,7 +125,7 @@ func _CFE_Set_Handler(srv interface{}, ctx context.Context, dec func(interface{}
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var CFE_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "cfe.proto.CFE",
+	ServiceName: "ganache.cfe.CFE",
 	HandlerType: (*CFEServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
