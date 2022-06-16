@@ -5,19 +5,19 @@ import (
 	"sync"
 	"sync/atomic"
 
+	pb "github.com/althk/ganache/cacheserver/proto"
 	cmap "github.com/orcaman/concurrent-map/v2"
-	"google.golang.org/protobuf/types/known/anypb"
 )
 
 // lru implements CachingStrategy and provides a LRU cache.
 type lru struct {
-	cm        cmap.ConcurrentMap[*anypb.Any]
+	cm        cmap.ConcurrentMap[*pb.CacheValue]
 	ll        *ddll // distributed doubly linked list
 	maxBytes  int64 // total cache size
 	currBytes int64 // current cache size
 }
 
-func (c *lru) Get(_ context.Context, k string) (*anypb.Any, bool) {
+func (c *lru) Get(_ context.Context, k string) (*pb.CacheValue, bool) {
 	v, e := c.cm.Get(k)
 	go func() {
 		if e {
@@ -27,8 +27,8 @@ func (c *lru) Get(_ context.Context, k string) (*anypb.Any, bool) {
 	return v, e
 }
 
-func (c *lru) Set(_ context.Context, k string, v *anypb.Any) (int64, error) {
-	s := int64(len(v.Value))
+func (c *lru) Set(_ context.Context, k string, v *pb.CacheValue) (int64, error) {
+	s := int64(len(v.Data.Value))
 	e := c.cm.Has(k)
 	c.cm.Set(k, v)
 	go func() {
