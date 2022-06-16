@@ -6,6 +6,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/golang/protobuf/proto"
+
 	cspb "github.com/althk/ganache/cacheserver/proto"
 	pb "github.com/althk/ganache/cfe/proto"
 	"github.com/rs/zerolog/log"
@@ -17,6 +19,7 @@ import (
 	"google.golang.org/grpc/health"
 	"google.golang.org/grpc/resolver"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/anypb"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
@@ -42,17 +45,24 @@ func (s *server) Get(ctx context.Context, in *pb.GetRequest) (*pb.GetResponse, e
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
-	return &pb.GetResponse{Data: r.Data}, nil
+	resp := &pb.GetResponse{
+		Data: &anypb.Any{},
+	}
+	proto.Merge(resp.Data, r.Data)
+
+	return resp, nil
 }
 
 func (s *server) Set(ctx context.Context, in *pb.SetRequest) (*emptypb.Empty, error) {
 	i := getShardNum(in.Namespace, in.Key, s.shardCount)
 	c := s.c[i]
-	r, err := c.Set(ctx, &cspb.SetRequest{
+	req := &cspb.SetRequest{
 		Namespace: in.Namespace,
 		Key:       in.Key,
-		Data:      in.Data,
-	})
+		Data:      &anypb.Any{},
+	}
+	proto.Merge(req.Data, in.Data)
+	r, err := c.Set(ctx, req)
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
