@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/golang/protobuf/proto"
+	"google.golang.org/protobuf/proto"
 
 	cspb "github.com/althk/ganache/cacheserver/proto"
 	pb "github.com/althk/ganache/cfe/proto"
