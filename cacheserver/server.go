@@ -130,11 +130,30 @@ func newCacheServer(h *health.Server, n int32, addr string) *server {
 func registerCacheServer(s *grpc.Server, cs *server) {
 	pb.RegisterCacheServer(s, cs)
 	go watchCache(cs, fmt.Sprintf("ganache/cache/%d", cs.shardNum))
+	syncCache(cs, fmt.Sprintf("ganache/cache/%d", cs.shardNum))
 	err := registerEndpoint(*csmSpec, *shard, cs.addr)
 	if err != nil {
 		log.Fatal().Msgf("Registration with Shard mgr failed: %v", err)
 	}
 	cs.h.SetServingStatus("cs", hpb.HealthCheckResponse_SERVING)
+}
+
+func syncCache(cs *server, getPrefix string) {
+	log.Info().Msg("Syncing existing stash of cache")
+	resp, err := cs.etcdc.Get(context.Background(), getPrefix, clientv3.WithPrefix())
+	if err != nil {
+		log.Fatal().Msgf("Unable to sync existing cache: %v", err)
+	}
+	log.Info().Msgf("Found %d keys to sync", resp.Count)
+	for _, kv := range resp.Kvs {
+		d := &pb.CacheKeyMetadata{}
+		err := proto.Unmarshal(kv.Value, d)
+		if err != nil {
+			log.Warn().Msgf("error syncing key %v", kv.Key)
+		}
+		cs.c.Set(context.Background(), d.Key, d.Value)
+	}
+	log.Info().Msg("Sync successfully completed")
 }
 
 func watchCache(cs *server, watchPrefix string) {
