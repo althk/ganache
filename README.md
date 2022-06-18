@@ -29,7 +29,7 @@ After taking care of the pre-reqs mentioned above:
       3. Shard number (`-shard` flag), starting from `0`
 4. Start Cache Frontend (CFE)
    1. Dependencies
-      1. Number of shards for the service (`-shards` flag), defaults to `4`
+      1. Number of shards for the service (`-shards` flag), defaults to `1`
       2. etcd server (`-etcd_server` flag)
 5. Use CFE API to profit (A client package will be added, hopefully soon).
 
