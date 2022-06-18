@@ -17,7 +17,7 @@ import (
 
 var port = flag.Int("port", 0, "cache server port, defaults to 0 which means any available port")
 var shard = flag.Int("shard", 0, "shard number for key distribution")
-var csmSpec = flag.String("csm_server", "localhost:42167", "address of CSM service in the form host:port")
+var csmSpec = flag.String("csm_server", "", "address of CSM service in the form host:port")
 var etcdSpec = flag.String("etcd_server", "", "address of etcd service in the form host:port")
 var debug = flag.Bool("debug", false, "enable debug logging")
 var maxCacheBytes = flag.Int64("max_cache_bytes", 1000000000, "max size oftotal cache in bytes, defaults to 1GiB")

@@ -23,6 +23,8 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
+const etcdCachePrefix = "ganache/cache"
+
 type CachingStrategy interface {
 	Get(ctx context.Context, key string) (*pb.CacheValue, bool)
 	Set(ctx context.Context, key string, val *pb.CacheValue) (int64, error)
@@ -85,7 +87,7 @@ func (s *server) Set(ctx context.Context, in *pb.SetRequest) (*emptypb.Empty, er
 		atomic.AddUint64(&s.nofSets, 1)
 	}()
 	go func() {
-		rk := fmt.Sprintf("ganache/cache/%d/%s", s.shardNum, k)
+		rk := s.syncKey(k)
 		m := &pb.CacheKeyMetadata{
 			Source: s.addr,
 			Key:    k,
@@ -113,6 +115,14 @@ func (s *server) key(ns, key string) string {
 	return fmt.Sprintf("%s%s", ns, key)
 }
 
+func (s *server) etcdShardPrefix() string {
+	return fmt.Sprintf("%s/%d", etcdCachePrefix, s.shardNum)
+}
+
+func (s *server) syncKey(k string) string {
+	return fmt.Sprintf("%s/%s", s.etcdShardPrefix(), k)
+}
+
 func newCacheServer(h *health.Server, n int32, addr string) *server {
 	c, err := etcdV3Client(*etcdSpec)
 	if err != nil {
@@ -129,8 +139,8 @@ func newCacheServer(h *health.Server, n int32, addr string) *server {
 
 func registerCacheServer(s *grpc.Server, cs *server) {
 	pb.RegisterCacheServer(s, cs)
-	go watchCache(cs, fmt.Sprintf("ganache/cache/%d", cs.shardNum))
-	syncCache(cs, fmt.Sprintf("ganache/cache/%d", cs.shardNum))
+	go watchCache(cs, cs.etcdShardPrefix())
+	syncCache(cs, cs.etcdShardPrefix())
 	err := registerEndpoint(*csmSpec, *shard, cs.addr)
 	if err != nil {
 		log.Fatal().Msgf("Registration with Shard mgr failed: %v", err)
