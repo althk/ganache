@@ -16,7 +16,7 @@ import (
 )
 
 var port = flag.Int("port", 0, "cache server port, defaults to 0 which means any available port")
-var shard = flag.Int("shard", -1, "shard number for key distribution")
+var shard = flag.Int("shard", 0, "shard number for key distribution")
 var csmSpec = flag.String("csm_server", "localhost:42167", "address of CSM service in the form host:port")
 var etcdSpec = flag.String("etcd_server", "", "address of etcd service in the form host:port")
 var debug = flag.Bool("debug", false, "enable debug logging")

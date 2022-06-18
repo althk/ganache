@@ -20,7 +20,7 @@ var port = flag.Int("port", 0, "cache server port, defaults to 0 which means any
 var etcdSpec = flag.String("etcd_server", "localhost:2379", "address of etcd server in the form host:port")
 var csResolverPrefix = flag.String("cacheserver_resolver_prefix", "ganache/cacheserver", "key prefix for cache service resolver")
 var debug = flag.Bool("debug", false, "enable debug logging")
-var shards = flag.Int("shards", 4, "number of shards to use for distribution")
+var shards = flag.Int("shards", 1, "number of shards to use for distribution")
 
 func main() {
 	flag.Parse()
