@@ -43,7 +43,15 @@ func (s *server) Get(ctx context.Context, in *pb.GetRequest) (*pb.GetResponse, e
 		Key:       in.Key,
 	})
 	if err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
+		es := status.Convert(err)
+		switch es.Code() {
+		case codes.Unavailable:
+			return nil, status.Error(codes.Unavailable, "No cache server available.")
+		case codes.NotFound:
+			return nil, err
+		default:
+			return nil, status.Error(codes.Internal, err.Error())
+		}
 	}
 	resp := &pb.GetResponse{
 		Data: &anypb.Any{},
