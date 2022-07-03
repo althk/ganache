@@ -38,7 +38,7 @@ func main() {
 	if err != nil {
 		log.Fatal().Err(err).Msg("Failed to create CFE server.")
 	}
-	s := grpc.NewServer()
+	s := grpc.NewServer(cfe.GetGRPCServerOpts()...)
 	pb.RegisterCFEServer(s, cfeServer)
 
 	h := health.NewServer()
