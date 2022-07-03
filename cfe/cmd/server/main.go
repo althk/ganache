@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"net"
 
-	cspb "github.com/althk/ganache/cacheserver/proto"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 
+	"github.com/althk/ganache/cfe"
 	pb "github.com/althk/ganache/cfe/proto"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/health"
@@ -34,22 +34,16 @@ func main() {
 	if err != nil {
 		log.Fatal().Msgf("Error listening on port %v: %v", *port, err)
 	}
-
+	cfeServer, err := cfe.New(*etcdSpec, *csResolverPrefix, *shards)
+	if err != nil {
+		log.Fatal().Err(err).Msg("Failed to create CFE server.")
+	}
 	s := grpc.NewServer()
-	h := health.NewServer()
+	pb.RegisterCFEServer(s, cfeServer)
 
+	h := health.NewServer()
 	hpb.RegisterHealthServer(s, h)
 	reflection.Register(s)
-	r, _ := etcdResolver(*etcdSpec)
-	c := make(map[int]cspb.CacheClient)
-	for i := 0; i < *shards; i++ {
-		c[i], _ = getCacheCli(r, *csResolverPrefix, i)
-	}
-	pb.RegisterCFEServer(s, &server{
-		h:          h,
-		c:          c,
-		shardCount: *shards,
-	})
 
 	log.Info().Msgf("Starting CFE on address %v", lis.Addr().String())
 	s.Serve(lis)

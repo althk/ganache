@@ -4,6 +4,8 @@ go 1.18
 
 require (
 	github.com/althk/ganache/cacheserver v0.0.0-00010101000000-000000000000
+	github.com/grpc-ecosystem/go-grpc-middleware/providers/zerolog/v2 v2.0.0-rc.2
+	github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.0.0-20200501113911-9a95f0fdbfea
 	github.com/rs/zerolog v1.26.1
 	go.etcd.io/etcd/client/v3 v3.5.4
 	google.golang.org/grpc v1.47.0

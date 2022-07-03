@@ -25,8 +25,8 @@ build-csm: protoc-csm
 	go build -o ../../../build/csm .
 
 build-cfe: protoc-cfe
-	cd cfe && \
-	go build -o ../build .
+	cd cfe/cmd/server && \
+	go build -o ../../../build/cfe .
 
 build-all: build-cacheserver build-csm build-cfe
 
