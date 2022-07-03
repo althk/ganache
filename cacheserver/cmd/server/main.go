@@ -8,6 +8,9 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 
+	"github.com/althk/ganache/cacheserver"
+	"github.com/althk/ganache/cacheserver/config"
+	pb "github.com/althk/ganache/cacheserver/proto"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/health"
 	"google.golang.org/grpc/reflection"
@@ -35,10 +38,27 @@ func main() {
 		log.Fatal().Msgf("Error listening on port %v: %v", *port, err)
 	}
 
-	s := grpc.NewServer()
+	csConfig := &config.CSConfig{
+		Port:          int32(*port),
+		CSMSpec:       *csmSpec,
+		ETCDSpec:      *etcdSpec,
+		MaxCacheBytes: *maxCacheBytes,
+		Shard:         int32(*shard),
+		Addr:          lis.Addr().String(),
+	}
+	cacheServer, err := cacheserver.New(csConfig)
+	if err != nil {
+		log.Fatal().Err(err).Msg("Cache server initialization failed.")
+	}
+
+	// cache server has been registered with CSM and synced the shard locally
+	// proceed with serving.
+	s := grpc.NewServer(cacheserver.GetGRPCServerOpts()...)
+	pb.RegisterCacheServer(s, cacheServer)
+
+	// health and other services.
 	h := health.NewServer()
 	hpb.RegisterHealthServer(s, h)
-	registerCacheServer(s, newCacheServer(h, int32(*shard), lis.Addr().String()))
 	reflection.Register(s)
 
 	log.Info().Msgf("Running cache server on %v", lis.Addr().String())

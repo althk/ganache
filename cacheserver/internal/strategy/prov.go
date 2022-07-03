@@ -8,7 +8,7 @@ import (
 func NewLRUCache(maxBytes int64) *lru {
 	return &lru{
 		cm:       cmap.New[*pb.CacheValue](),
-		ll:       newDDLL(cmap.SHARD_COUNT),
+		ll:       &dll{},
 		maxBytes: maxBytes,
 	}
 

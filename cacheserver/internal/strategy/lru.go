@@ -12,18 +12,18 @@ import (
 // lru implements CachingStrategy and provides a LRU cache.
 type lru struct {
 	cm        cmap.ConcurrentMap[*pb.CacheValue]
-	ll        *ddll // distributed doubly linked list
+	ll        *dll  // distributed doubly linked list
 	maxBytes  int64 // total cache size
 	currBytes int64 // current cache size
 }
 
 func (c *lru) Get(_ context.Context, k string) (*pb.CacheValue, bool) {
 	v, e := c.cm.Get(k)
-	go func() {
-		if e {
+	if e {
+		go func() {
 			c.ll.UpsertFront(k, true)
-		}
-	}()
+		}()
+	}
 	return v, e
 }
 
@@ -34,19 +34,23 @@ func (c *lru) Set(_ context.Context, k string, v *pb.CacheValue) (int64, error) 
 	go func() {
 		atomic.AddInt64(&c.currBytes, s)
 		c.ll.UpsertFront(k, e)
-		if c.currBytes > c.maxBytes {
-			c.cm.Remove(c.ll.RemoveBack(k))
+		if atomic.LoadInt64(&c.currBytes) > atomic.LoadInt64(&c.maxBytes) {
+			rk := c.ll.RemoveBack()
+			rv, _ := c.cm.Get(rk)
+			rs := int64(len(rv.Data.Value))
+			c.cm.Remove(rk)
+			atomic.AddInt64(&c.currBytes, -rs)
 		}
 	}()
 	return s, nil
 }
 
-func (c *lru) KeysCount(_ context.Context) int64 {
+func (c *lru) Count(_ context.Context) int64 {
 	return int64(c.cm.Count())
 }
 
 func (c *lru) CurrSize(_ context.Context) int64 {
-	return c.currBytes
+	return atomic.LoadInt64(&c.currBytes)
 }
 
 // lln represents a node in a doubly linked list.
@@ -75,6 +79,7 @@ type dll struct {
 
 func (l *dll) InsertFront(k string) {
 	l.l.Lock()
+	defer l.l.Unlock()
 	nh := &dlln{
 		data: k,
 		next: l.head,
@@ -83,20 +88,27 @@ func (l *dll) InsertFront(k string) {
 	if l.head != nil {
 		l.head.prev = nh
 	}
-	l.l.Unlock()
+	l.head = nh
+	if l.tail == nil {
+		l.tail = l.head
+	}
 }
 
 func (l *dll) RemoveBack() string {
 	l.l.Lock()
+	defer l.l.Unlock()
 	v := l.tail.data
 	l.tail = l.tail.prev
 	l.tail.next = nil
-	l.l.Unlock()
 	return v
 }
 
 func (l *dll) MoveToFront(k string) {
 	l.l.Lock()
+	defer l.l.Unlock()
+	if l.head.data == k {
+		return // node is already head
+	}
 	n := l.head
 	for n != nil {
 		if n.data == k {
@@ -108,50 +120,23 @@ func (l *dll) MoveToFront(k string) {
 				prev: nil,
 			}
 			t.prev = l.head
+
+			// adjust tail
+			if n.next == nil {
+				l.tail = n.prev
+			}
 			break
 		}
 		n = n.next
 	}
-	l.l.Unlock()
 }
 
-type ddll struct {
-	shards     []*dll // distributed/sharded doubly linked list
-	shardCount int32
-}
-
-func newDDLL(shardCount int) *ddll {
-	ddll := &ddll{
-		shards:     make([]*dll, shardCount),
-		shardCount: int32(shardCount),
-	}
-	for i := 0; i < shardCount; i++ {
-		ddll.shards[i] = &dll{}
-	}
-	return ddll
-}
-
-func (l *ddll) GetShard(k string) *dll {
-	return l.shards[uint(fnv32(k))%uint(l.shardCount)]
-}
-
-func (l *ddll) UpsertFront(k string, exists bool) {
-	shard := l.GetShard(k)
+func (l *dll) UpsertFront(k string, exists bool) {
 	if exists {
-		shard.MoveToFront(k)
+		l.MoveToFront(k)
 		return
 	}
-	shard.InsertFront(k)
-}
-
-func (l *ddll) RemoveBack(k string) string {
-	shard := l.GetShard(k)
-	return shard.RemoveBack()
-}
-
-func (l *ddll) InsertFront(k string) {
-	shard := l.GetShard(k)
-	shard.InsertFront(k)
+	l.InsertFront(k)
 }
 
 // fnv32 computes and returns a hash for the given key.
