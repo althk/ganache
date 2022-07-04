@@ -15,6 +15,11 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
+var (
+	ErrShardOrClientsEmpty          = fmt.Errorf("shard count and cache clients cannot be zero/empty")
+	ErrShardAndClientCountsMismatch = fmt.Errorf("no. of shards != no. of cache clients")
+)
+
 type CFE struct {
 	pb.UnimplementedCFEServer
 	ShardCount   int
@@ -73,9 +78,11 @@ func (s *CFE) getCacheClient(ns, key string, mod int) cspb.CacheClient {
 }
 
 func NewCFE(shardCount int, cacheClis map[int]cspb.CacheClient) (*CFE, error) {
+	if shardCount == 0 || len(cacheClis) == 0 {
+		return nil, ErrShardOrClientsEmpty
+	}
 	if shardCount != len(cacheClis) {
-		return nil, fmt.Errorf("no. of shards (%d) != no. of cache clients (%d)",
-			shardCount, len(cacheClis))
+		return nil, ErrShardAndClientCountsMismatch
 	}
 	return &CFE{
 		ShardCount:   shardCount,
