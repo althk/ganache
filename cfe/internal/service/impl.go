@@ -17,8 +17,8 @@ import (
 
 type CFE struct {
 	pb.UnimplementedCFEServer
-	ShardCount  int
-	CacheClient map[int]cspb.CacheClient
+	ShardCount   int
+	CacheClients map[int]cspb.CacheClient
 }
 
 func (s *CFE) Get(ctx context.Context, in *pb.GetRequest) (*pb.GetResponse, error) {
@@ -27,8 +27,7 @@ func (s *CFE) Get(ctx context.Context, in *pb.GetRequest) (*pb.GetResponse, erro
 		Str("ns", in.Namespace).
 		Str("k", in.Key).
 		Send()
-	i := getShardNum(in.Namespace, in.Key, s.ShardCount)
-	c := s.CacheClient[i]
+	c := s.getCacheClient(in.Namespace, in.Key, s.ShardCount)
 	r, err := c.Get(ctx, &cspb.GetRequest{
 		Namespace: in.Namespace,
 		Key:       in.Key,
@@ -53,8 +52,7 @@ func (s *CFE) Get(ctx context.Context, in *pb.GetRequest) (*pb.GetResponse, erro
 }
 
 func (s *CFE) Set(ctx context.Context, in *pb.SetRequest) (*emptypb.Empty, error) {
-	i := getShardNum(in.Namespace, in.Key, s.ShardCount)
-	c := s.CacheClient[i]
+	c := s.getCacheClient(in.Namespace, in.Key, s.ShardCount)
 	req := &cspb.SetRequest{
 		Namespace: in.Namespace,
 		Key:       in.Key,
@@ -68,16 +66,21 @@ func (s *CFE) Set(ctx context.Context, in *pb.SetRequest) (*emptypb.Empty, error
 	return r, nil
 }
 
-func NewCFE(shardCount int, cacheClis map[int]cspb.CacheClient) (*CFE, error) {
-	return &CFE{
-		ShardCount:  shardCount,
-		CacheClient: cacheClis,
-	}, nil
+func (s *CFE) getCacheClient(ns, key string, mod int) cspb.CacheClient {
+	k := fmt.Sprintf("%s%s", ns, key)
+	shardNum := int(fnv32(k)) % mod
+	return s.CacheClients[shardNum]
 }
 
-func getShardNum(ns, key string, mod int) int {
-	k := fmt.Sprintf("%s%s", ns, key)
-	return int(fnv32(k)) % mod
+func NewCFE(shardCount int, cacheClis map[int]cspb.CacheClient) (*CFE, error) {
+	if shardCount != len(cacheClis) {
+		return nil, fmt.Errorf("no. of shards (%d) != no. of cache clients (%d)",
+			shardCount, len(cacheClis))
+	}
+	return &CFE{
+		ShardCount:   shardCount,
+		CacheClients: cacheClis,
+	}, nil
 }
 
 // fnv32 computes and returns a hash for the given key.
