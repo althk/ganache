@@ -2,17 +2,11 @@ package server
 
 import (
 	"fmt"
-	"os"
 	"strings"
 	"time"
 
 	cspb "github.com/althk/ganache/cacheserver/proto"
 	"github.com/althk/ganache/cfe/internal/service"
-	grpczerolog "github.com/grpc-ecosystem/go-grpc-middleware/providers/zerolog/v2"
-	middleware "github.com/grpc-ecosystem/go-grpc-middleware/v2"
-	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
-	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/tags"
-	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	clientv3 "go.etcd.io/etcd/client/v3"
 	resolverv3 "go.etcd.io/etcd/client/v3/naming/resolver"
@@ -35,20 +29,6 @@ func New(etcdSpec, csResolverPrefix string, shardCount int) (*service.CFE, error
 	}
 	return service.NewCFE(shardCount, c)
 
-}
-
-func GetGRPCServerOpts() []grpc.ServerOption {
-	return []grpc.ServerOption{
-		getServerInterceptorChain(),
-	}
-}
-
-func getServerInterceptorChain() grpc.ServerOption {
-	logger := zerolog.New(os.Stdout)
-	return middleware.WithUnaryServerChain(
-		tags.UnaryServerInterceptor(),
-		logging.UnaryServerInterceptor(grpczerolog.InterceptorLogger(logger)),
-	)
 }
 
 func getCacheCli(r resolver.Builder, cacheResolverPrefix string, shardNum int) (cspb.CacheClient, error) {

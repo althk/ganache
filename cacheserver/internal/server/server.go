@@ -2,7 +2,6 @@ package server
 
 import (
 	"context"
-	"os"
 	"time"
 
 	"github.com/althk/ganache/cacheserver/internal/config"
@@ -10,19 +9,17 @@ import (
 	"github.com/althk/ganache/cacheserver/internal/strategy"
 	csync "github.com/althk/ganache/cacheserver/internal/sync"
 	csmpb "github.com/althk/ganache/csm/proto"
-	grpczerolog "github.com/grpc-ecosystem/go-grpc-middleware/providers/zerolog/v2"
-	middleware "github.com/grpc-ecosystem/go-grpc-middleware/v2"
-	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
-	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/tags"
-	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	clientv3 "go.etcd.io/etcd/client/v3"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
 )
 
 func registerWithCSM(cscfg *config.CSConfig) error {
-	conn, err := grpc.Dial(cscfg.CSMSpec, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	creds, err := cscfg.TLSConfig.Creds()
+	if err != nil {
+		return err
+	}
+	conn, err := grpc.Dial(cscfg.CSMSpec, grpc.WithTransportCredentials(creds))
 	if err != nil {
 		return err
 	}
@@ -49,20 +46,6 @@ func etcdV3Client(etcdSpec string) (*clientv3.Client, error) {
 		return nil, err
 	}
 	return cli, nil
-}
-
-func GetGRPCServerOpts() []grpc.ServerOption {
-	return []grpc.ServerOption{
-		getServerInterceptorChain(),
-	}
-}
-
-func getServerInterceptorChain() grpc.ServerOption {
-	logger := zerolog.New(os.Stdout)
-	return middleware.WithUnaryServerChain(
-		tags.UnaryServerInterceptor(),
-		logging.UnaryServerInterceptor(grpczerolog.InterceptorLogger(logger)),
-	)
 }
 
 func New(cscfg *config.CSConfig) (*service.CacheServer, error) {

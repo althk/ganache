@@ -1,11 +1,8 @@
 package main
 
 import (
-	"crypto/tls"
-	"crypto/x509"
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"net"
 
 	"github.com/rs/zerolog"
@@ -14,9 +11,8 @@ import (
 	"github.com/althk/ganache/cacheserver/internal/config"
 	"github.com/althk/ganache/cacheserver/internal/server"
 	pb "github.com/althk/ganache/cacheserver/proto"
+	grpcutils "github.com/althk/ganache/utils/grpc"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials"
-	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/health"
 	"google.golang.org/grpc/reflection"
 
@@ -30,8 +26,10 @@ var etcdSpec = flag.String("etcd_server", "localhost:2379", "address of etcd ser
 var debug = flag.Bool("debug", false, "enable debug logging")
 var maxCacheBytes = flag.Int64("max_cache_bytes", 1000000000, "max size oftotal cache in bytes, defaults to 1GiB")
 var clientCAPath = flag.String("client_ca_file", "", "Path to CA cert file that can verify client certs")
+var rootCAPath = flag.String("root_ca_file", "", "Path to CA cert file that can verify server/peer certs")
 var tlsCrtPath = flag.String("tls_cert_file", "", "Path to server's TLS cert file")
 var tlsKeyPath = flag.String("tls_key_file", "", "Path to server's TLS key file")
+var skipTLS = flag.Bool("skip_tls", false, "If server should skip TLS and use insecure creds")
 
 func main() {
 	flag.Parse()
@@ -46,6 +44,13 @@ func main() {
 		zerolog.SetGlobalLevel(zerolog.DebugLevel)
 	}
 
+	tlsCfg := &grpcutils.TLSConfig{
+		CertFilePath:     *tlsCrtPath,
+		KeyFilePath:      *tlsKeyPath,
+		ClientCAFilePath: *clientCAPath,
+		SkipTLS:          *skipTLS,
+		RootCAFilePath:   *rootCAPath,
+	}
 	csConfig := &config.CSConfig{
 		Port:          int32(*port),
 		CSMSpec:       *csmSpec,
@@ -53,6 +58,7 @@ func main() {
 		MaxCacheBytes: *maxCacheBytes,
 		Shard:         int32(*shard),
 		Addr:          lis.Addr().String(),
+		TLSConfig:     tlsCfg,
 	}
 	cacheServer, err := server.New(csConfig)
 	if err != nil {
@@ -61,8 +67,7 @@ func main() {
 
 	// cache server has been registered with CSM and synced the shard locally
 	// proceed with serving.
-
-	serverOpts, err := getGRPCServerOpts(*clientCAPath, *tlsCrtPath, *tlsKeyPath)
+	serverOpts, err := getGRPCServerOpts(tlsCfg)
 	if err != nil {
 		log.Fatal().Err(err).Msg("Failed to load grpc server opts.")
 	}
@@ -78,41 +83,10 @@ func main() {
 	s.Serve(lis)
 }
 
-func getGRPCServerOpts(clientCAPath, tlsCrtPath, tlsKeyPath string) ([]grpc.ServerOption, error) {
-	tcreds, err := getGRPCServerCreds(clientCAPath, tlsCrtPath, tlsKeyPath)
+func getGRPCServerOpts(tlsCfg *grpcutils.TLSConfig) ([]grpc.ServerOption, error) {
+	serverOpts, err := grpcutils.GetGRPCServerOpts(tlsCfg)
 	if err != nil {
 		return nil, err
 	}
-	serverOpts := server.GetGRPCServerOpts()
-	serverOpts = append(serverOpts, tcreds)
 	return serverOpts, nil
-}
-
-func getGRPCServerCreds(clientCAPath, tlsCrtPath, tlsKeyPath string) (grpc.ServerOption, error) {
-	if tlsCrtPath == "" && tlsKeyPath == "" {
-		return grpc.Creds(insecure.NewCredentials()), nil
-	}
-	tlsKeyPair, err := tls.LoadX509KeyPair(tlsCrtPath, tlsKeyPath)
-	if err != nil {
-		return nil, err
-	}
-	cfg := &tls.Config{
-		Certificates: []tls.Certificate{tlsKeyPair},
-		ClientAuth:   tls.NoClientCert,
-	}
-	if clientCAPath == "" {
-		return grpc.Creds(credentials.NewTLS(cfg)), nil
-	}
-	clientCA, err := ioutil.ReadFile(clientCAPath)
-	if err != nil {
-		return nil, err
-	}
-	certPool := x509.NewCertPool()
-	if !certPool.AppendCertsFromPEM(clientCA) {
-		return nil, fmt.Errorf("error adding client CA cert to pool")
-	}
-	cfg.ClientAuth = tls.RequireAndVerifyClientCert
-	cfg.ClientCAs = certPool
-
-	return grpc.Creds(credentials.NewTLS(cfg)), nil
 }
