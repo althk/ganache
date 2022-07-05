@@ -21,11 +21,6 @@ type CSM struct {
 }
 
 func (s *CSM) RegisterCacheServer(ctx context.Context, in *pb.RegisterCacheServerRequest) (*pb.RegisterCacheServerResponse, error) {
-	err := s.Etcd.Sync(ctx)
-	if err != nil {
-		return nil, status.Errorf(codes.Unavailable, "Error connecting to etcd server: %v", err)
-	}
-
 	shardPrefix := strings.Join([]string{s.CSResolverPrefix, fmt.Sprint(in.Shard)}, "/")
 	em, err := endpoints.NewManager(s.Etcd, shardPrefix)
 	if err != nil {
