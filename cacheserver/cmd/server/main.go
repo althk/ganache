@@ -11,7 +11,7 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 
-	"github.com/althk/ganache/cacheserver/config"
+	"github.com/althk/ganache/cacheserver/internal/config"
 	"github.com/althk/ganache/cacheserver/internal/server"
 	pb "github.com/althk/ganache/cacheserver/proto"
 	"google.golang.org/grpc"
@@ -36,14 +36,14 @@ var tlsKeyPath = flag.String("tls_key_file", "", "Path to server's TLS key file"
 func main() {
 	flag.Parse()
 
-	zerolog.SetGlobalLevel(zerolog.InfoLevel)
-	if *debug {
-		zerolog.SetGlobalLevel(zerolog.DebugLevel)
-	}
-
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", *port))
 	if err != nil {
 		log.Fatal().Msgf("Error listening on port %v: %v", *port, err)
+	}
+
+	zerolog.SetGlobalLevel(zerolog.InfoLevel)
+	if *debug {
+		zerolog.SetGlobalLevel(zerolog.DebugLevel)
 	}
 
 	csConfig := &config.CSConfig{
@@ -62,12 +62,10 @@ func main() {
 	// cache server has been registered with CSM and synced the shard locally
 	// proceed with serving.
 
-	tcreds, err := getGRPCServerCreds(*clientCAPath, *tlsCrtPath, *tlsKeyPath)
+	serverOpts, err := getGRPCServerOpts(*clientCAPath, *tlsCrtPath, *tlsKeyPath)
 	if err != nil {
-		log.Fatal().Err(err).Msg("Failed to load grpc creds.")
+		log.Fatal().Err(err).Msg("Failed to load grpc server opts.")
 	}
-	serverOpts := server.GetGRPCServerOpts()
-	serverOpts = append(serverOpts, tcreds)
 	s := grpc.NewServer(serverOpts...)
 	pb.RegisterCacheServer(s, cacheServer)
 
@@ -78,6 +76,16 @@ func main() {
 
 	log.Info().Msgf("Running cache server on %v", lis.Addr().String())
 	s.Serve(lis)
+}
+
+func getGRPCServerOpts(clientCAPath, tlsCrtPath, tlsKeyPath string) ([]grpc.ServerOption, error) {
+	tcreds, err := getGRPCServerCreds(clientCAPath, tlsCrtPath, tlsKeyPath)
+	if err != nil {
+		return nil, err
+	}
+	serverOpts := server.GetGRPCServerOpts()
+	serverOpts = append(serverOpts, tcreds)
+	return serverOpts, nil
 }
 
 func getGRPCServerCreds(clientCAPath, tlsCrtPath, tlsKeyPath string) (grpc.ServerOption, error) {

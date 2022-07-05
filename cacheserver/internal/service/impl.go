@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"sync/atomic"
 
-	"github.com/althk/ganache/cacheserver/config"
+	"github.com/althk/ganache/cacheserver/internal/config"
 	pb "github.com/althk/ganache/cacheserver/proto"
 	clientv3 "go.etcd.io/etcd/client/v3"
 	"google.golang.org/grpc/codes"

@@ -5,7 +5,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/althk/ganache/cacheserver/config"
+	"github.com/althk/ganache/cacheserver/internal/config"
 	"github.com/althk/ganache/cacheserver/internal/service"
 	"github.com/althk/ganache/cacheserver/internal/strategy"
 	csync "github.com/althk/ganache/cacheserver/internal/sync"
