@@ -44,7 +44,13 @@ func main() {
 	if err != nil {
 		log.Fatal().Err(err).Msg("Failed to create new CSM server.")
 	}
-	serverOpts, err := getGRPCServerOpts(*clientCAPath, *tlsCrtPath, *tlsKeyPath, *skipTLS)
+	tlsCfg := &grpcutils.TLSConfig{
+		CertFilePath:     *tlsCrtPath,
+		KeyFilePath:      *tlsKeyPath,
+		ClientCAFilePath: *clientCAPath,
+		SkipTLS:          *skipTLS,
+	}
+	serverOpts, err := getGRPCServerOpts(tlsCfg)
 	if err != nil {
 		log.Fatal().Err(err).Msg("Failed to load grpc server opts.")
 	}
@@ -60,13 +66,7 @@ func main() {
 	s.Serve(lis)
 }
 
-func getGRPCServerOpts(clientCAPath, tlsCrtPath, tlsKeyPath string, skipTLS bool) ([]grpc.ServerOption, error) {
-	tlsCfg := &grpcutils.TLSConfig{
-		CertFilePath:     tlsCrtPath,
-		KeyFilePath:      tlsKeyPath,
-		ClientCAFilePath: clientCAPath,
-		SkipTLS:          skipTLS,
-	}
+func getGRPCServerOpts(tlsCfg *grpcutils.TLSConfig) ([]grpc.ServerOption, error) {
 	serverOpts, err := grpcutils.GetGRPCServerOpts(tlsCfg)
 	if err != nil {
 		return nil, err

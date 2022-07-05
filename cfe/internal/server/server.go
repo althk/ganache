@@ -3,12 +3,11 @@ package server
 import (
 	"fmt"
 	"strings"
-	"time"
 
 	cspb "github.com/althk/ganache/cacheserver/proto"
 	"github.com/althk/ganache/cfe/internal/service"
+	etcdutils "github.com/althk/ganache/utils/etcd"
 	"github.com/rs/zerolog/log"
-	clientv3 "go.etcd.io/etcd/client/v3"
 	resolverv3 "go.etcd.io/etcd/client/v3/naming/resolver"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -43,13 +42,7 @@ func getCacheCli(r resolver.Builder, cacheResolverPrefix string, shardNum int) (
 
 func etcdResolver(etcdSpec string) (resolver.Builder, error) {
 	log.Info().Msgf("Connecting to etcd server: %v", etcdSpec)
-	cli, err := clientv3.New(clientv3.Config{
-		Endpoints:   []string{etcdSpec},
-		DialTimeout: 5 * time.Second,
-	})
-	if err != nil {
-		return nil, err
-	}
+	cli, _ := etcdutils.V3Client(etcdSpec)
 	r, err := resolverv3.NewBuilder(cli)
 	if err != nil {
 		return nil, err
