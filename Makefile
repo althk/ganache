@@ -1,3 +1,4 @@
+SHELL=/bin/bash
 
 clean:
 	rm -rf build/*
@@ -48,7 +49,53 @@ csm-all: build-csm test-csm
 
 cfe-all: build-cfe test-cfe
 
-etcd:
+newcert-ca1:
+	openssl req -x509 -sha256 -days 30 \
+	-nodes -newkey rsa:2048 \
+	-subj "/O=althk/OU=ganache/CN=ca1" \
+	-keyout certs/testca.key -out certs/testca.crt
+
+newcert-cacheserver1:
+	openssl req -newkey rsa:4096 -nodes \
+	-keyout certs/cs1.key -out certs/cs1.csr \
+	-subj "/O=althk/OU=ganache/CN=cs1"
+	openssl x509 -req -in certs/cs1.csr -days 30 \
+	-CA certs/testca.crt -CAkey certs/testca.key \
+	-CAcreateserial -out certs/cs1.crt \
+	-extfile <(printf "subjectAltName=DNS:localhost,IP:0.0.0.0,IP:127.0.0.1")
+
+newcert-csm1:
+	openssl req -newkey rsa:4096 -nodes \
+	-keyout certs/csm1.key -out certs/csm1.csr \
+	-subj "/O=althk/OU=ganache/CN=csm1"
+	openssl x509 -req -in certs/csm1.csr -days 30 \
+	-CA certs/testca.crt -CAkey certs/testca.key \
+	-CAcreateserial -out certs/csm1.crt \
+	-extfile <(printf "subjectAltName=DNS:localhost,IP:0.0.0.0,IP:127.0.0.1")
+
+newcert-cfe1:
+	openssl req -newkey rsa:4096 -nodes \
+	-keyout certs/cfe1.key -out certs/cfe1.csr \
+	-subj "/O=althk/OU=ganache/CN=cfe1"
+	openssl x509 -req -in certs/cfe1.csr -days 30 \
+	-CA certs/testca.crt -CAkey certs/testca.key \
+	-CAcreateserial -out certs/csm1.crt \
+	-extfile <(printf "subjectAltName=DNS:localhost,IP:0.0.0.0,IP:127.0.0.1")
+
+cleancerts:
+	rm -f certs/*
+
+gencerts: cleancerts newcert-ca1 newcert-cacheserver1 newcert-csm1 newcert-cfe1
+
+run-etcd:
 	cd /tmp && etcd
 
-.PHONY: clean protoc-cacheserver protoc-csm protoc-cfe build-cacheserver build-csm build-cfe test-cacheserver test-csm test-cfe etcd cacheserver-all csm-all cfe-all
+run-csm1:
+	cd csm && \
+	go run cmd/server/main.go -port 41443
+
+run-cacheserver1:
+	cd cacheserver && \
+	go run cmd/server/main.go -port 44443 -csm_server localhost:41443 -client_ca_file ../certs/testca.crt -tls_cert_file ../certs/cs1.crt -tls_key_file ../certs/cs1.key
+
+.PHONY: clean protoc-cacheserver protoc-csm protoc-cfe build-cacheserver build-csm build-cfe test-cacheserver test-csm test-cfe run-etcd cacheserver-all csm-all cfe-all newcert-ca1 newcert-cacheserver1 newcert-csm1 newcert-cfe1 gencerts run-cacheserver1 run-csm1
