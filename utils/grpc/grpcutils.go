@@ -15,6 +15,9 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/health"
+	hpb "google.golang.org/grpc/health/grpc_health_v1"
+	"google.golang.org/grpc/reflection"
 )
 
 type TLSConfig struct {
@@ -23,6 +26,12 @@ type TLSConfig struct {
 	ClientCAFilePath string
 	RootCAFilePath   string
 	SkipTLS          bool
+}
+
+type GRPCServerConfig struct {
+	*TLSConfig
+	EnableReflection   bool
+	EnableHealthServer bool
 }
 
 func (c *TLSConfig) Creds() (credentials.TransportCredentials, error) {
@@ -118,4 +127,23 @@ func getServerInterceptorChain() grpc.ServerOption {
 		tags.UnaryServerInterceptor(),
 		logging.UnaryServerInterceptor(grpczerolog.InterceptorLogger(logger)),
 	)
+}
+
+func NewGRPCServer(grpcCfg *GRPCServerConfig) (*grpc.Server, error) {
+	serverOpts, err := GetGRPCServerOpts(grpcCfg.TLSConfig)
+	if err != nil {
+		return nil, err
+	}
+	s := grpc.NewServer(serverOpts...)
+
+	// register other servers
+	if grpcCfg.EnableHealthServer {
+		h := health.NewServer()
+		hpb.RegisterHealthServer(s, h)
+	}
+	if grpcCfg.EnableReflection {
+		reflection.Register(s)
+	}
+
+	return s, nil
 }

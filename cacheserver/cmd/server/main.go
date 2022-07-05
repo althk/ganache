@@ -12,11 +12,6 @@ import (
 	"github.com/althk/ganache/cacheserver/internal/server"
 	pb "github.com/althk/ganache/cacheserver/proto"
 	grpcutils "github.com/althk/ganache/utils/grpc"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/health"
-	"google.golang.org/grpc/reflection"
-
-	hpb "google.golang.org/grpc/health/grpc_health_v1"
 )
 
 var port = flag.Int("port", 0, "cache server port, defaults to 0 which means any available port")
@@ -67,26 +62,18 @@ func main() {
 
 	// cache server has been registered with CSM and synced the shard locally
 	// proceed with serving.
-	serverOpts, err := getGRPCServerOpts(tlsCfg)
+	grpcServerCfg := &grpcutils.GRPCServerConfig{
+		TLSConfig:          tlsCfg,
+		EnableReflection:   true,
+		EnableHealthServer: true,
+	}
+	s, err := grpcutils.NewGRPCServer(grpcServerCfg)
 	if err != nil {
 		log.Fatal().Err(err).Msg("Failed to load grpc server opts.")
 	}
-	s := grpc.NewServer(serverOpts...)
+	// register cacheserver
 	pb.RegisterCacheServer(s, cacheServer)
-
-	// health and other services.
-	h := health.NewServer()
-	hpb.RegisterHealthServer(s, h)
-	reflection.Register(s)
 
 	log.Info().Msgf("Running cache server on %v", lis.Addr().String())
 	s.Serve(lis)
-}
-
-func getGRPCServerOpts(tlsCfg *grpcutils.TLSConfig) ([]grpc.ServerOption, error) {
-	serverOpts, err := grpcutils.GetGRPCServerOpts(tlsCfg)
-	if err != nil {
-		return nil, err
-	}
-	return serverOpts, nil
 }
