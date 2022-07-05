@@ -23,3 +23,6 @@ go.work*
 
 # Go builds
 build/
+
+# CSRs
+*.csr
