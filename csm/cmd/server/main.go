@@ -12,7 +12,7 @@ import (
 	"google.golang.org/grpc/health"
 	"google.golang.org/grpc/reflection"
 
-	"github.com/althk/ganache/csm"
+	"github.com/althk/ganache/csm/internal/server"
 	pb "github.com/althk/ganache/csm/proto"
 	hpb "google.golang.org/grpc/health/grpc_health_v1"
 )
@@ -35,11 +35,11 @@ func main() {
 		log.Fatal().Msgf("Error listening on port %v: %v", *port, err)
 	}
 
-	csmServer, err := csm.New(*etcdSpec, *csResolverPrefix)
+	csmServer, err := server.New(*etcdSpec, *csResolverPrefix)
 	if err != nil {
 		log.Fatal().Err(err).Msg("Failed to create new CSM server.")
 	}
-	s := grpc.NewServer(csm.GetGRPCServerOpts()...)
+	s := grpc.NewServer(server.GetGRPCServerOpts()...)
 	pb.RegisterShardManagerServer(s, csmServer)
 
 	// register other servers

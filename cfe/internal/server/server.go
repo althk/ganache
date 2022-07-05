@@ -1,4 +1,4 @@
-package cfe
+package server
 
 import (
 	"fmt"

@@ -8,7 +8,7 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 
-	"github.com/althk/ganache/cfe"
+	"github.com/althk/ganache/cfe/internal/server"
 	pb "github.com/althk/ganache/cfe/proto"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/health"
@@ -34,11 +34,11 @@ func main() {
 	if err != nil {
 		log.Fatal().Msgf("Error listening on port %v: %v", *port, err)
 	}
-	cfeServer, err := cfe.New(*etcdSpec, *csResolverPrefix, *shards)
+	cfeServer, err := server.New(*etcdSpec, *csResolverPrefix, *shards)
 	if err != nil {
 		log.Fatal().Err(err).Msg("Failed to create CFE server.")
 	}
-	s := grpc.NewServer(cfe.GetGRPCServerOpts()...)
+	s := grpc.NewServer(server.GetGRPCServerOpts()...)
 	pb.RegisterCFEServer(s, cfeServer)
 
 	h := health.NewServer()

@@ -1,4 +1,4 @@
-package cacheserver
+package server
 
 import (
 	"context"

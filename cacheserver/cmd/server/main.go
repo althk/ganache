@@ -11,8 +11,8 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 
-	"github.com/althk/ganache/cacheserver"
 	"github.com/althk/ganache/cacheserver/config"
+	"github.com/althk/ganache/cacheserver/internal/server"
 	pb "github.com/althk/ganache/cacheserver/proto"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -54,7 +54,7 @@ func main() {
 		Shard:         int32(*shard),
 		Addr:          lis.Addr().String(),
 	}
-	cacheServer, err := cacheserver.New(csConfig)
+	cacheServer, err := server.New(csConfig)
 	if err != nil {
 		log.Fatal().Err(err).Msg("Cache server initialization failed.")
 	}
@@ -66,7 +66,7 @@ func main() {
 	if err != nil {
 		log.Fatal().Err(err).Msg("Failed to load grpc creds.")
 	}
-	serverOpts := cacheserver.GetGRPCServerOpts()
+	serverOpts := server.GetGRPCServerOpts()
 	serverOpts = append(serverOpts, tcreds)
 	s := grpc.NewServer(serverOpts...)
 	pb.RegisterCacheServer(s, cacheServer)

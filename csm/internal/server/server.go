@@ -1,4 +1,4 @@
-package csm
+package server
 
 import (
 	"os"
