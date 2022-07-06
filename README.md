@@ -8,6 +8,8 @@ A simple, distributed, in-memory cache service with TLS auth.
 
 ### Benchmarks
 
+The following benchmark tests (`client/benchmark_test.go`) were run against local CFE server, using `client/client.go` with all Ganache components running on the same host.
+
 ```bash
 $ cd client && go test -bench=CFE -benchtime=100000x -benchmem
 goos: linux
