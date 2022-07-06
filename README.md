@@ -6,6 +6,20 @@ A simple, distributed, in-memory cache service with TLS auth.
 
 >**NOTE: doing this for practicing building production grade systems, it is still in development.**
 
+### Benchmarks
+
+```bash
+$ cd client && go test -bench=CFE -benchtime=100000x -benchmem
+goos: linux
+goarch: amd64
+pkg: github.com/althk/ganache/client
+cpu: Intel(R) Core(TM) i7-1065G7 CPU @ 1.30GHz
+BenchmarkCFEGetString-8   	  100000	     82826 ns/op	    5289 B/op	      99 allocs/op
+BenchmarkCFEGetInt64-8    	  100000	     83450 ns/op	    5238 B/op	      98 allocs/op
+PASS
+ok  	github.com/althk/ganache/client	16.660s
+```
+
 ### Get Started
 
 To try this out locally real quick:
