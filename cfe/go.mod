@@ -15,6 +15,7 @@ require (
 require go.etcd.io/etcd/client/pkg/v3 v3.5.4 // indirect
 
 require (
+	github.com/althk/ganache/client v0.0.0-00010101000000-000000000000
 	github.com/coreos/go-semver v0.3.0 // indirect
 	github.com/coreos/go-systemd/v22 v22.3.3-0.20220203105225-a9a7ef127534 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
@@ -40,3 +41,5 @@ require (
 replace github.com/althk/ganache/cacheserver => ../cacheserver
 
 replace github.com/althk/ganache/utils => ../utils
+
+replace github.com/althk/ganache/client => ../client
