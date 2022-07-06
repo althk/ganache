@@ -12,7 +12,7 @@ import (
 // lru implements CachingStrategy and provides a LRU cache.
 type lru struct {
 	cm        cmap.ConcurrentMap[*pb.CacheValue]
-	ll        *dll  // distributed doubly linked list
+	ll        *dll  // doubly linked list
 	maxBytes  int64 // total cache size
 	currBytes int64 // current cache size
 }
