@@ -40,8 +40,7 @@ After taking care of the pre-reqs mentioned above:
 2. Open new terminal, start Cache Shard Manager (CSM) `make run-csm1`
 3. Open new terminal, start one or more Cache Servers (at least one for each shard) `make run-cacheserver1`
 4. Open new terminal, start Cache Frontend (CFE) `make run-cfe1`
-
-5. Use CFE API to profit (A client package will be added, hopefully soon).
+5. Use the `client` package to make use of the service. See `client/benchmark_test.go` for an example of how to set/get items from cache.
 
 ### Overview
 
