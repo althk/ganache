@@ -26,6 +26,7 @@ type TLSConfig struct {
 	ClientCAFilePath string
 	RootCAFilePath   string
 	SkipTLS          bool
+	NoClientCert     bool
 }
 
 type GRPCServerConfig struct {
@@ -58,14 +59,17 @@ func (c *TLSConfig) Creds() (credentials.TransportCredentials, error) {
 }
 
 func (c *TLSConfig) newTLS() (*tls.Config, error) {
+	cfg := &tls.Config{
+		ClientAuth: tls.NoClientCert,
+	}
+	if c.NoClientCert {
+		return cfg, nil
+	}
 	tlsKeyPair, err := tls.LoadX509KeyPair(c.CertFilePath, c.KeyFilePath)
 	if err != nil {
 		return nil, err
 	}
-	cfg := &tls.Config{
-		Certificates: []tls.Certificate{tlsKeyPair},
-		ClientAuth:   tls.NoClientCert,
-	}
+	cfg.Certificates = []tls.Certificate{tlsKeyPair}
 	return cfg, nil
 }
 
@@ -140,6 +144,7 @@ func NewGRPCServer(grpcCfg *GRPCServerConfig) (*grpc.Server, error) {
 	if grpcCfg.EnableHealthServer {
 		h := health.NewServer()
 		hpb.RegisterHealthServer(s, h)
+		h.Resume()
 	}
 	if grpcCfg.EnableReflection {
 		reflection.Register(s)

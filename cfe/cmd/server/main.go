@@ -13,16 +13,18 @@ import (
 	grpcutils "github.com/althk/ganache/utils/grpc"
 )
 
-var port = flag.Int("port", 0, "cache server port, defaults to 0 which means any available port")
-var etcdSpec = flag.String("etcd_server", "localhost:2379", "address of etcd server in the form host:port")
-var csResolverPrefix = flag.String("cacheserver_resolver_prefix", "ganache/cacheserver", "key prefix for cache service resolver")
-var debug = flag.Bool("debug", false, "enable debug logging")
-var shards = flag.Int("shards", 1, "number of shards to use for distribution")
-var clientCAPath = flag.String("client_ca_file", "", "Path to CA cert file that can verify client certs")
-var rootCAPath = flag.String("root_ca_file", "", "Path to CA cert file that can verify server/peer certs")
-var tlsCrtPath = flag.String("tls_cert_file", "", "Path to server's TLS cert file")
-var tlsKeyPath = flag.String("tls_key_file", "", "Path to server's TLS key file")
-var skipTLS = flag.Bool("skip_tls", false, "If server should skip TLS and use insecure creds")
+var (
+	port             = flag.Int("port", 0, "cache server port, defaults to 0 which means any available port")
+	etcdSpec         = flag.String("etcd_server", "localhost:2379", "address of etcd server in the form host:port")
+	csResolverPrefix = flag.String("cacheserver_resolver_prefix", "ganache/cacheserver", "key prefix for cache service resolver")
+	debug            = flag.Bool("debug", false, "enable debug logging")
+	shards           = flag.Int("shards", 1, "number of shards to use for distribution")
+	clientCAPath     = flag.String("client_ca_file", "", "Path to CA cert file that can verify client certs")
+	rootCAPath       = flag.String("root_ca_file", "", "Path to CA cert file that can verify server/peer certs")
+	tlsCrtPath       = flag.String("tls_cert_file", "", "Path to server's TLS cert file")
+	tlsKeyPath       = flag.String("tls_key_file", "", "Path to server's TLS key file")
+	skipTLS          = flag.Bool("skip_tls", false, "If server should skip TLS and use insecure creds")
+)
 
 func main() {
 	flag.Parse()
@@ -37,11 +39,6 @@ func main() {
 		log.Fatal().Msgf("Error listening on port %v: %v", *port, err)
 	}
 
-	cfeServer, err := server.New(*etcdSpec, *csResolverPrefix, *shards)
-	if err != nil {
-		log.Fatal().Err(err).Msg("Failed to create CFE server.")
-	}
-
 	tlsCfg := &grpcutils.TLSConfig{
 		CertFilePath:     *tlsCrtPath,
 		KeyFilePath:      *tlsKeyPath,
@@ -53,6 +50,10 @@ func main() {
 		TLSConfig:          tlsCfg,
 		EnableReflection:   true,
 		EnableHealthServer: true,
+	}
+	cfeServer, err := server.New(tlsCfg, *etcdSpec, *csResolverPrefix, *shards)
+	if err != nil {
+		log.Fatal().Err(err).Msg("Failed to create CFE server.")
 	}
 	s, err := grpcutils.NewGRPCServer(grpcServerCfg)
 	if err != nil {

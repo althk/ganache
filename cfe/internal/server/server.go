@@ -7,21 +7,23 @@ import (
 	cspb "github.com/althk/ganache/cacheserver/proto"
 	"github.com/althk/ganache/cfe/internal/service"
 	etcdutils "github.com/althk/ganache/utils/etcd"
+	grpcutils "github.com/althk/ganache/utils/grpc"
 	"github.com/rs/zerolog/log"
 	resolverv3 "go.etcd.io/etcd/client/v3/naming/resolver"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/resolver"
 )
 
-func New(etcdSpec, csResolverPrefix string, shardCount int) (*service.CFE, error) {
+func New(tlsCfg *grpcutils.TLSConfig, etcdSpec, csResolverPrefix string, shardCount int) (*service.CFE, error) {
 	r, err := etcdResolver(etcdSpec)
 	if err != nil {
 		return nil, err
 	}
 	c := make(map[int]cspb.CacheClient)
+	creds, _ := tlsCfg.Creds()
 	for i := 0; i < shardCount; i++ {
-		c[i], err = getCacheCli(r, csResolverPrefix, i)
+		c[i], err = getCacheCli(creds, r, csResolverPrefix, i)
 		if err != nil {
 			return nil, err
 		}
@@ -30,9 +32,10 @@ func New(etcdSpec, csResolverPrefix string, shardCount int) (*service.CFE, error
 
 }
 
-func getCacheCli(r resolver.Builder, cacheResolverPrefix string, shardNum int) (cspb.CacheClient, error) {
+func getCacheCli(creds credentials.TransportCredentials, r resolver.Builder, cacheResolverPrefix string, shardNum int) (cspb.CacheClient, error) {
 	ep := strings.Join([]string{"etcd://", cacheResolverPrefix, fmt.Sprint(shardNum)}, "/")
-	conn, err := grpc.Dial(ep, grpc.WithResolvers(r), grpc.WithTransportCredentials(insecure.NewCredentials()))
+	log.Info().Msgf("Build cacheserver client for %v", ep)
+	conn, err := grpc.Dial(ep, grpc.WithResolvers(r), grpc.WithTransportCredentials(creds))
 	if err != nil {
 		return nil, err
 	}
