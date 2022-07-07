@@ -3,8 +3,8 @@ module github.com/althk/ganache/cacheserver
 go 1.18
 
 require (
-	github.com/althk/ganache/csm v0.0.0-00010101000000-000000000000
-	github.com/althk/ganache/utils v0.0.0-00010101000000-000000000000
+	github.com/althk/ganache/csm v0.0.0-20220706175043-8ffe22299080
+	github.com/althk/ganache/utils v0.0.0-20220706175043-8ffe22299080
 	github.com/rs/zerolog v1.27.0
 	go.etcd.io/etcd/client/v3 v3.5.4
 	google.golang.org/grpc v1.47.0
@@ -23,21 +23,21 @@ require (
 	github.com/stretchr/objx v0.4.0 // indirect
 	go.etcd.io/etcd/api/v3 v3.5.4 // indirect
 	go.etcd.io/etcd/client/pkg/v3 v3.5.4 // indirect
-	go.uber.org/atomic v1.7.0 // indirect
-	go.uber.org/multierr v1.6.0 // indirect
-	go.uber.org/zap v1.17.0 // indirect
+	go.uber.org/atomic v1.9.0 // indirect
+	go.uber.org/multierr v1.8.0 // indirect
+	go.uber.org/zap v1.21.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
 require (
+	github.com/althk/dmap v0.0.0-20220707164922-cdbb55a2943f
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/grpc-ecosystem/go-grpc-middleware/providers/zerolog/v2 v2.0.0-rc.2 // indirect
-	github.com/orcaman/concurrent-map/v2 v2.0.0
 	github.com/stretchr/testify v1.8.0
-	golang.org/x/net v0.0.0-20220630215102-69896b714898 // indirect
+	golang.org/x/net v0.0.0-20220706163947-c90051bbdb60 // indirect
 	golang.org/x/sys v0.0.0-20220704084225-05e143d24a9e // indirect
 	golang.org/x/text v0.3.7 // indirect
-	google.golang.org/genproto v0.0.0-20220630174209-ad1d48641aa7 // indirect
+	google.golang.org/genproto v0.0.0-20220707150051-590a5ac7bee1 // indirect
 )
 
 replace github.com/althk/ganache/csm => ../csm

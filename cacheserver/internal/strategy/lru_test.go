@@ -97,16 +97,6 @@ func TestDLLRemoveBack(t *testing.T) {
 	require.EqualValues(t, "key3", ll.head.data)
 }
 
-func TestFnv32(t *testing.T) {
-	h1, h2, h3 := fnv32("key1"), fnv32("key2"), fnv32("KEY1")
-	require.NotEqualValues(t, h1, h2)
-	require.NotEqualValues(t, h2, h3)
-	require.NotEqualValues(t, h1, h3)
-	require.EqualValues(t, h1, fnv32("key1"))
-	require.EqualValues(t, h2, fnv32("key2"))
-	require.EqualValues(t, h3, fnv32("KEY1"))
-}
-
 func populateCache(t *testing.T) {
 	c = NewLRUCache(maxBytes)
 	for i := 1; i <= 10; i++ {

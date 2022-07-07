@@ -1,13 +1,13 @@
 package strategy
 
 import (
+	"github.com/althk/dmap"
 	pb "github.com/althk/ganache/cacheserver/proto"
-	cmap "github.com/orcaman/concurrent-map/v2"
 )
 
 func NewLRUCache(maxBytes int64) *lru {
 	return &lru{
-		cm:       cmap.New[*pb.CacheValue](),
+		cm:       dmap.New[string, *pb.CacheValue](26),
 		ll:       &dll{},
 		maxBytes: maxBytes,
 	}

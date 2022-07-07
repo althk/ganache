@@ -5,13 +5,13 @@ import (
 	"sync"
 	"sync/atomic"
 
+	"github.com/althk/dmap"
 	pb "github.com/althk/ganache/cacheserver/proto"
-	cmap "github.com/orcaman/concurrent-map/v2"
 )
 
 // lru implements CachingStrategy and provides a LRU cache.
 type lru struct {
-	cm        cmap.ConcurrentMap[*pb.CacheValue]
+	cm        dmap.DMap[string, *pb.CacheValue]
 	ll        *dll  // doubly linked list
 	maxBytes  int64 // total cache size
 	currBytes int64 // current cache size
@@ -137,18 +137,4 @@ func (l *dll) UpsertFront(k string, exists bool) {
 		return
 	}
 	l.InsertFront(k)
-}
-
-// fnv32 computes and returns a hash for the given key.
-// lifted as-is from
-// https://github.com/orcaman/concurrent-map/blob/v2.0.0/concurrent_map.go
-func fnv32(key string) uint32 {
-	hash := uint32(2166136261)
-	const prime32 = uint32(16777619)
-	keyLength := len(key)
-	for i := 0; i < keyLength; i++ {
-		hash *= prime32
-		hash ^= uint32(key[i])
-	}
-	return hash
 }
