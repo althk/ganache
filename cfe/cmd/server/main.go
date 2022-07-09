@@ -15,7 +15,7 @@ import (
 
 var (
 	port             = flag.Int("port", 0, "cache server port, defaults to 0 which means any available port")
-	etcdSpec         = flag.String("etcd_server", "localhost:2379", "address of etcd server in the form host:port")
+	etcdSpec         = flag.String("etcd_server", "", "address of etcd server in the form host:port")
 	csResolverPrefix = flag.String("cacheserver_resolver_prefix", "ganache/cacheserver", "key prefix for cache service resolver")
 	debug            = flag.Bool("debug", false, "enable debug logging")
 	shards           = flag.Int("shards", 1, "number of shards to use for distribution")
@@ -34,7 +34,7 @@ func main() {
 		zerolog.SetGlobalLevel(zerolog.DebugLevel)
 	}
 
-	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", *port))
+	lis, err := net.Listen("tcp", fmt.Sprintf("0.0.0.0:%d", *port))
 	if err != nil {
 		log.Fatal().Msgf("Error listening on port %v: %v", *port, err)
 	}
