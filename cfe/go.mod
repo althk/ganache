@@ -15,7 +15,6 @@ require (
 require go.etcd.io/etcd/client/pkg/v3 v3.5.4 // indirect
 
 require (
-	github.com/althk/ganache/client v0.0.0-20220706175043-8ffe22299080
 	github.com/coreos/go-semver v0.3.0 // indirect
 	github.com/coreos/go-systemd/v22 v22.3.3-0.20220203105225-a9a7ef127534 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
