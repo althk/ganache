@@ -40,12 +40,8 @@ After taking care of the pre-reqs mentioned above:
 
 1. `cd ganache`
 2. `docker-compose up --build`
-   1. This will start all the components within a bridged docker network. The ports are mapped on arbitrary ports on the host. As an example, to run benchmarks on the host:
-
-   ```bash
-   cd client
-   go test -bench=CFE -benchtime=100000x -benchmem -v -args -cfe_server `docker port ganache_cfe_1 40001 | head -n 1` -root_ca_file ../certs/testca.crt
-   ```
+   1. This will start all the components within a bridged docker network. The ports are mapped on arbitrary ports on the host. To test all the wiring:
+   `docker-compose run client-benchmark`
 
 ##### Makefile
 
@@ -55,6 +51,7 @@ After taking care of the pre-reqs mentioned above:
 3. Open new terminal, start one or more Cache Servers (at least one for each shard) `make run-cacheserver1`
 4. Open new terminal, start Cache Frontend (CFE) `make run-cfe1`
 5. Use the `client` package to make use of the service. See `client/benchmark_test.go` for an example of how to set/get items from cache.
+6. To test all the wiring `make run-client-benchmark`
 
 ### Overview
 

@@ -80,6 +80,26 @@ services:
       -root_ca_file /ganache/certs/testca.crt
       -tls_cert_file /ganache/certs/cfe1.crt
       -tls_key_file /ganache/certs/cfe1.key
+
+  client-benchmark:
+    image: ganache.cfe_bench_test:latest
+    depends_on:
+      - cs
+    build:
+      context: .
+      dockerfile: deploy/client-benchmark.Dockerfile
+    networks:
+      - net
+    command: |-
+      /bin/benchmark_test
+      -test.bench=CFE
+      -test.benchmem
+      -test.benchtime=10000x
+      -cfe_server=ganache_cfe_1:40001
+      -root_ca_file=/ganache/certs/testca.crt
+    profiles:
+      - client-benchmarks
+
 networks:
   net:
     driver: bridge

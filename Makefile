@@ -96,10 +96,13 @@ run-csm1:
 
 run-cacheserver1:
 	cd cacheserver && \
-	go run cmd/server/main.go -debug -port 44443 -csm_server localhost:41443 -root_ca_file ../certs/testca.crt -client_ca_file ../certs/testca.crt -tls_cert_file ../certs/cs1.crt -tls_key_file ../certs/cs1.key
+	go run cmd/server/main.go -debug -listen_addr ":44443" -csm_server localhost:41443 -root_ca_file ../certs/testca.crt -client_ca_file ../certs/testca.crt -tls_cert_file ../certs/cs1.crt -tls_key_file ../certs/cs1.key
 
 run-cfe1:
 	cd cfe && \
-	go run cmd/server/main.go -debug -port 40001 -root_ca_file ../certs/testca.crt -tls_cert_file ../certs/cfe1.crt -tls_key_file ../certs/cfe1.key
+	go run cmd/server/main.go -debug -port 40001 -etcd_server localhost:2379 -root_ca_file ../certs/testca.crt -tls_cert_file ../certs/cfe1.crt -tls_key_file ../certs/cfe1.key
 
+run-client-benchmark:
+	cd client && \
+	go test -bench=CFE -benchmem -benchtime=100000x -v -args -cfe_server 0.0.0.0:40001 -root_ca_file ../certs/testca.crt
 .PHONY: clean protoc-cacheserver protoc-csm protoc-cfe build-cacheserver build-csm build-cfe test-cacheserver test-csm test-cfe run-etcd cacheserver-all csm-all cfe-all newcert-ca1 newcert-cacheserver1 newcert-csm1 newcert-cfe1 gencerts run-cacheserver1 run-csm1 run-cfe1
