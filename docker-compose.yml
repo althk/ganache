@@ -1,0 +1,85 @@
+version: "3.8"
+
+services:
+  etcd:
+    image: gcr.io/etcd-development/etcd:latest
+    networks:
+      - net
+    ports:
+      - "2379"
+      - "2380"
+    command: |-
+      /usr/local/bin/etcd
+      --name node1
+      --advertise-client-urls "http://0.0.0.0:2379"
+      --listen-client-urls "http://0.0.0.0:2379"
+  csm:
+    image: ganache.csm:latest
+    depends_on:
+      - etcd
+    build:
+      context: .
+      dockerfile: deploy/csm1.Dockerfile
+    networks:
+      - net
+    ports:
+      - "41443"
+    deploy:
+      restart_policy:
+        condition: none
+    entrypoint: |-
+      /bin/csm
+      -port 41443
+      -etcd_server ganache_etcd_1:2379
+      -client_ca_file /ganache/certs/testca.crt
+      -tls_cert_file /ganache/certs/csm1.crt
+      -tls_key_file /ganache/certs/csm1.key
+  cs:
+    image: ganache.cacheserver:latest
+    depends_on:
+      - csm
+    build:
+      context: .
+      dockerfile: deploy/cs1.Dockerfile
+    networks:
+      - net
+    ports:
+      - "44443"
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: none
+    entrypoint: |-
+      /bin/cacheserver
+      -listen_addr ":44443"
+      -etcd_server ganache_etcd_1:2379
+      -csm_server ganache_csm_1:41443
+      -root_ca_file /ganache/certs/testca.crt
+      -client_ca_file /ganache/certs/testca.crt
+      -tls_cert_file /ganache/certs/cs1.crt
+      -tls_key_file /ganache/certs/cs1.key
+  cfe:
+    image: ganache.cfe:latest
+    depends_on:
+      - cs
+    build:
+      context: .
+      dockerfile: deploy/cfe1.Dockerfile
+    networks:
+      - net
+    ports:
+      - "40001"
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: none
+    entrypoint: |-
+      /bin/cfe
+      -port 40001
+      -etcd_server ganache_etcd_1:2379
+      -root_ca_file /ganache/certs/testca.crt
+      -tls_cert_file /ganache/certs/cfe1.crt
+      -tls_key_file /ganache/certs/cfe1.key
+networks:
+  net:
+    driver: bridge
