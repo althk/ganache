@@ -46,9 +46,7 @@ func main() {
 		SkipTLS:          *skipTLS,
 	}
 	grpcServerCfg := &grpcutils.GRPCServerConfig{
-		TLSConfig:          tlsCfg,
-		EnableReflection:   true,
-		EnableHealthServer: true,
+		TLSConfig: tlsCfg,
 	}
 	s, err := grpcutils.NewGRPCServer(grpcServerCfg)
 	if err != nil {

@@ -47,9 +47,7 @@ func main() {
 		RootCAFilePath:   *rootCAPath,
 	}
 	grpcServerCfg := &grpcutils.GRPCServerConfig{
-		TLSConfig:          tlsCfg,
-		EnableReflection:   true,
-		EnableHealthServer: true,
+		TLSConfig: tlsCfg,
 	}
 	cfeServer, err := server.New(tlsCfg, *etcdSpec, *csResolverPrefix, *shards)
 	if err != nil {

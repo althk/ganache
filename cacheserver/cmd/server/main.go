@@ -61,9 +61,7 @@ func main() {
 	// cache server has been registered with CSM and synced the shard locally
 	// proceed with serving.
 	grpcServerCfg := &grpcutils.GRPCServerConfig{
-		TLSConfig:          tlsCfg,
-		EnableReflection:   true,
-		EnableHealthServer: true,
+		TLSConfig: tlsCfg,
 	}
 	s, err := grpcutils.NewGRPCServer(grpcServerCfg)
 	if err != nil {

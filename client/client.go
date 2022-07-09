@@ -26,11 +26,11 @@ func New(cfeSpec, caFilePath string) (CacheClient, error) {
 		RootCAFilePath: caFilePath,
 		NoClientCert:   true,
 	}
-	creds, err := tlsCfg.Creds()
+	opts, err := grpcutils.GetGRPCDialOpts(tlsCfg)
 	if err != nil {
 		return nil, err
 	}
-	conn, err := grpc.Dial(cfeSpec, grpc.WithTransportCredentials(creds))
+	conn, err := grpc.Dial(cfeSpec, opts...)
 	if err != nil {
 		return nil, err
 	}

@@ -5,6 +5,7 @@ import (
 	"crypto/x509"
 	"fmt"
 	"io/ioutil"
+	"net/http"
 	"os"
 	"time"
 
@@ -13,6 +14,10 @@ import (
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/tags"
 	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
+	"go.opencensus.io/plugin/ocgrpc"
+	"go.opencensus.io/stats/view"
+	"go.opencensus.io/zpages"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
@@ -35,6 +40,16 @@ var kasp = keepalive.ServerParameters{
 	Timeout:               2 * time.Second,  // Wait 1 second for the ping ack before assuming the connection is dead
 }
 
+var kacp = keepalive.ClientParameters{
+	Time:                8 * time.Second, // send pings every 10 seconds if there is no activity
+	Timeout:             2 * time.Second, // wait 1 second for ping ack before considering the connection dead
+	PermitWithoutStream: true,            // send pings even without active streams
+}
+
+// ZPagesAddr declares the address that will serve
+// OpenCensus zpages handler.
+var ZPagesAddr = "0.0.0.0:3902"
+
 type TLSConfig struct {
 	CertFilePath     string
 	KeyFilePath      string
@@ -46,8 +61,9 @@ type TLSConfig struct {
 
 type GRPCServerConfig struct {
 	*TLSConfig
-	EnableReflection   bool
-	EnableHealthServer bool
+	SkipReflection   bool
+	SkipHealthServer bool
+	SkipMetrics      bool
 }
 
 func (c *TLSConfig) Creds() (credentials.TransportCredentials, error) {
@@ -139,7 +155,24 @@ func GetGRPCServerOpts(tlsCfg *TLSConfig) ([]grpc.ServerOption, error) {
 		grpc.Creds(creds),
 		grpc.KeepaliveEnforcementPolicy(kaep),
 		grpc.KeepaliveParams(kasp),
+		grpc.StatsHandler(&ocgrpc.ServerHandler{}),
 	}, nil
+}
+
+func GetGRPCDialOpts(tlsCfg *TLSConfig) ([]grpc.DialOption, error) {
+	if err := view.Register(ocgrpc.DefaultClientViews...); err != nil {
+		return nil, err
+	}
+	creds, err := tlsCfg.Creds()
+	if err != nil {
+		return nil, err
+	}
+	return []grpc.DialOption{
+		grpc.WithTransportCredentials(creds),
+		grpc.WithKeepaliveParams(kacp),
+		grpc.WithStatsHandler(&ocgrpc.ClientHandler{}),
+	}, nil
+
 }
 
 func getServerInterceptorChain() grpc.ServerOption {
@@ -151,6 +184,9 @@ func getServerInterceptorChain() grpc.ServerOption {
 }
 
 func NewGRPCServer(grpcCfg *GRPCServerConfig) (*grpc.Server, error) {
+	if err := view.Register(ocgrpc.DefaultServerViews...); err != nil {
+		return nil, err
+	}
 	serverOpts, err := GetGRPCServerOpts(grpcCfg.TLSConfig)
 	if err != nil {
 		return nil, err
@@ -159,13 +195,24 @@ func NewGRPCServer(grpcCfg *GRPCServerConfig) (*grpc.Server, error) {
 	s := grpc.NewServer(serverOpts...)
 
 	// register other servers
-	if grpcCfg.EnableHealthServer {
+	if !grpcCfg.SkipHealthServer {
 		h := health.NewServer()
 		hpb.RegisterHealthServer(s, h)
 		h.Resume()
 	}
-	if grpcCfg.EnableReflection {
+	if !grpcCfg.SkipReflection {
 		reflection.Register(s)
+	}
+
+	if !grpcCfg.SkipMetrics {
+		go func() {
+			mux := http.NewServeMux()
+			zpages.Handle(mux, "/debug")
+
+			if err := http.ListenAndServe(ZPagesAddr, mux); err != nil {
+				log.Fatal().Err(err).Msg("Failed to start metrics handler")
+			}
+		}()
 	}
 
 	return s, nil
