@@ -32,8 +32,22 @@ To try this out locally real quick:
 2. Clone the repo.
    1. `git clone https://github.com/althk/ganache`
 3. Decide how many shards to use for distributed-ness, default is `1`, i.e, no sharding.
+4. If you prefer to test it out using the provided Docker images (preferred), install `docker` and `docker-compose` for your platform.
 
 After taking care of the pre-reqs mentioned above:
+
+##### Docker
+
+1. `cd ganache`
+2. `docker-compose up --build`
+   1. This will start all the components within a bridged docker network. The ports are mapped on arbitrary ports on the host. As an example, to run benchmarks on the host:
+
+   ```bash
+   cd client
+   go test -bench=CFE -benchtime=100000x -benchmem -v -args -cfe_server `docker port ganache_cfe_1 40001 | head -n 1` -root_ca_file ../certs/testca.crt
+   ```
+
+##### Makefile
 
 0. `cd ganache`
 1. Open new terminal, start etcd `make run-etcd`
