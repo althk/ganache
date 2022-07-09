@@ -2,10 +2,14 @@ package client
 
 import (
 	"context"
+	"flag"
 	"fmt"
 	"os"
 	"testing"
 )
+
+var cfeSpec = flag.String("cfe_server", "", "address of cfe server/LB in the form host:port")
+var rootCAPath = flag.String("root_ca_file", "", "path to the root CA cert")
 
 var c CacheClient
 
@@ -38,8 +42,9 @@ func BenchmarkCFEGetInt64(b *testing.B) {
 }
 
 func TestMain(m *testing.M) {
+	flag.Parse()
 	var err error
-	c, err = New("localhost:40001", "../certs/testca.crt")
+	c, err = New(*cfeSpec, *rootCAPath)
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
@@ -55,5 +60,5 @@ func TestMain(m *testing.M) {
 		fmt.Println(err)
 		os.Exit(1)
 	}
-	m.Run()
+	os.Exit(m.Run())
 }
