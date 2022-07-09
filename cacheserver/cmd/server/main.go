@@ -2,7 +2,6 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	"net"
 
 	"github.com/rs/zerolog"
@@ -14,7 +13,7 @@ import (
 	grpcutils "github.com/althk/ganache/utils/grpc"
 )
 
-var port = flag.Int("port", 0, "cache server port, defaults to 0 which means any available port")
+var listenAddr = flag.String("listen_addr", ":0", "cache server port, defaults to 0 which means any available port")
 var shard = flag.Int("shard", 0, "shard number for key distribution")
 var csmSpec = flag.String("csm_server", "", "address of CSM service in the form host:port")
 var etcdSpec = flag.String("etcd_server", "localhost:2379", "address of etcd service in the form host:port")
@@ -29,9 +28,9 @@ var skipTLS = flag.Bool("skip_tls", false, "If server should skip TLS and use in
 func main() {
 	flag.Parse()
 
-	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", *port))
+	lis, err := net.Listen("tcp", GetOutboundAddr(*listenAddr))
 	if err != nil {
-		log.Fatal().Msgf("Error listening on port %v: %v", *port, err)
+		log.Fatal().Msgf("Error listening on port %v: %v", *listenAddr, err)
 	}
 
 	zerolog.SetGlobalLevel(zerolog.InfoLevel)
@@ -47,7 +46,6 @@ func main() {
 		RootCAFilePath:   *rootCAPath,
 	}
 	csConfig := &config.CSConfig{
-		Port:          int32(*port),
 		CSMSpec:       *csmSpec,
 		ETCDSpec:      *etcdSpec,
 		MaxCacheBytes: *maxCacheBytes,
@@ -76,4 +74,20 @@ func main() {
 
 	log.Info().Msgf("Running cache server on %v", lis.Addr().String())
 	s.Serve(lis)
+}
+
+// Get preferred outbound addr (ip:port) of this server
+func GetOutboundAddr(addr string) string {
+	host, port, _ := net.SplitHostPort(addr)
+	if ip := net.ParseIP(host); ip != nil && !ip.IsLoopback() {
+		return net.JoinHostPort(ip.String(), port)
+	}
+	conn, err := net.Dial("udp", "8.8.8.8:80")
+	if err != nil {
+		return addr
+	}
+	defer conn.Close()
+
+	localAddr := conn.LocalAddr().(*net.UDPAddr)
+	return net.JoinHostPort(localAddr.IP.String(), port)
 }
