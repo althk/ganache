@@ -62,7 +62,7 @@ newcert-cacheserver1:
 	openssl x509 -req -in certs/cs1.csr -days 30 \
 	-CA certs/testca.crt -CAkey certs/testca.key \
 	-CAcreateserial -out certs/cs1.crt \
-	-extfile <(printf "subjectAltName=DNS:localhost,DNS:ganache/cacheserver/0,IP:0.0.0.0,IP:127.0.0.1")
+	-extfile <(printf "subjectAltName=DNS:localhost,DNS:ganache/cacheserver/0,DNS:ganache_cs_1,DNS:ganache_cs_2,IP:0.0.0.0,IP:127.0.0.1")
 
 newcert-csm1:
 	openssl req -newkey rsa:4096 -nodes \
@@ -71,7 +71,7 @@ newcert-csm1:
 	openssl x509 -req -in certs/csm1.csr -days 30 \
 	-CA certs/testca.crt -CAkey certs/testca.key \
 	-CAcreateserial -out certs/csm1.crt \
-	-extfile <(printf "subjectAltName=DNS:localhost,IP:0.0.0.0,IP:127.0.0.1")
+	-extfile <(printf "subjectAltName=DNS:localhost,DNS:ganache_csm_1,IP:0.0.0.0,IP:127.0.0.1")
 
 newcert-cfe1:
 	openssl req -newkey rsa:4096 -nodes \
@@ -80,7 +80,7 @@ newcert-cfe1:
 	openssl x509 -req -in certs/cfe1.csr -days 30 \
 	-CA certs/testca.crt -CAkey certs/testca.key \
 	-CAcreateserial -out certs/cfe1.crt \
-	-extfile <(printf "subjectAltName=DNS:localhost,IP:0.0.0.0,IP:127.0.0.1")
+	-extfile <(printf "subjectAltName=DNS:localhost,DNS:ganache_cfe_1,IP:0.0.0.0,IP:127.0.0.1")
 
 cleancerts:
 	rm -f certs/*
