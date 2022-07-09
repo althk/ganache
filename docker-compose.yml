@@ -24,6 +24,7 @@ services:
       - net
     ports:
       - "41443"
+      - "3902"
     deploy:
       restart_policy:
         condition: none
@@ -45,6 +46,7 @@ services:
       - net
     ports:
       - "44443"
+      - "3902"
     deploy:
       replicas: 1
       restart_policy:
@@ -69,6 +71,7 @@ services:
       - net
     ports:
       - "40001"
+      - "3902"
     deploy:
       replicas: 1
       restart_policy:
