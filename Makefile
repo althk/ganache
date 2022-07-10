@@ -98,6 +98,10 @@ run-cacheserver1:
 	cd cacheserver && \
 	go run cmd/server/main.go -debug -listen_addr ":44443" -csm_server localhost:41443 -root_ca_file ../certs/testca.crt -client_ca_file ../certs/testca.crt -tls_cert_file ../certs/cs1.crt -tls_key_file ../certs/cs1.key
 
+run-cacheserver2:
+	cd cacheserver && \
+	go run cmd/server/main.go -debug -listen_addr ":45443" -csm_server localhost:41443 -root_ca_file ../certs/testca.crt -client_ca_file ../certs/testca.crt -tls_cert_file ../certs/cs1.crt -tls_key_file ../certs/cs1.key
+
 run-cfe1:
 	cd cfe && \
 	go run cmd/server/main.go -debug -port 40001 -etcd_server localhost:2379 -root_ca_file ../certs/testca.crt -tls_cert_file ../certs/cfe1.crt -tls_key_file ../certs/cfe1.key
