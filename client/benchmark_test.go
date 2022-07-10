@@ -10,10 +10,12 @@ import (
 
 var cfeSpec = flag.String("cfe_server", "", "address of cfe server/LB in the form host:port")
 var rootCAPath = flag.String("root_ca_file", "", "path to the root CA cert")
+var maxParallelism = flag.Int("max_parallelism", 2, "max parallelism, it is used to set max goroutines as p*GOMAXPROCS")
 
 var c CacheClient
 
 func BenchmarkCFEGetString(b *testing.B) {
+	b.SetParallelism(*maxParallelism)
 	b.RunParallel(func(pb *testing.PB) {
 		ctx := context.TODO()
 		for pb.Next() {
@@ -28,6 +30,7 @@ func BenchmarkCFEGetString(b *testing.B) {
 }
 
 func BenchmarkCFEGetInt64(b *testing.B) {
+	b.SetParallelism(*maxParallelism)
 	b.RunParallel(func(pb *testing.PB) {
 		ctx := context.TODO()
 		for pb.Next() {

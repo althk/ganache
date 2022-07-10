@@ -10,7 +10,6 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
-	"google.golang.org/protobuf/types/known/anypb"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
@@ -30,9 +29,6 @@ type CacheServer struct {
 	Etcd     *clientv3.Client
 	Addr     string
 	shardNum int32
-	// TODO: add the following features (no particular order):
-	// 1. counters by namespaces
-	// 2. expiration policy
 }
 
 func (s *CacheServer) Get(ctx context.Context, in *pb.GetRequest) (*pb.GetResponse, error) {
@@ -41,9 +37,8 @@ func (s *CacheServer) Get(ctx context.Context, in *pb.GetRequest) (*pb.GetRespon
 		return nil, status.Errorf(codes.NotFound, "Cache miss for key %v", in.Key)
 	}
 	resp := &pb.GetResponse{
-		Data: &anypb.Any{},
+		Data: v.GetData(),
 	}
-	proto.Merge(resp.Data, v.Data)
 	return resp, nil
 }
 
@@ -52,18 +47,16 @@ func (s *CacheServer) Set(ctx context.Context, in *pb.SetRequest) (*emptypb.Empt
 	ts := timestamppb.Now()
 	v := &pb.CacheValue{
 		SourceTs: ts,
-		Data:     &anypb.Any{},
+		Data:     in.GetData(),
 	}
-	proto.Merge(v.Data, in.Data)
 	s.Cache.Set(ctx, k, v)
 	go func() {
 		rk := s.fullKeyPath(k)
 		m := &pb.CacheKeyMetadata{
 			Source: s.Addr,
 			Key:    k,
-			Value:  &pb.CacheValue{},
+			Value:  v,
 		}
-		proto.Merge(m.Value, v)
 		data, _ := proto.Marshal(m)
 		s.Etcd.Put(context.Background(), rk, string(data))
 	}()

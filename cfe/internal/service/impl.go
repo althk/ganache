@@ -4,14 +4,10 @@ import (
 	"context"
 	"fmt"
 
-	"google.golang.org/protobuf/proto"
-
 	cspb "github.com/althk/ganache/cacheserver/proto"
 	pb "github.com/althk/ganache/cfe/proto"
-	"github.com/rs/zerolog/log"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	"google.golang.org/protobuf/types/known/anypb"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
@@ -27,11 +23,6 @@ type CFE struct {
 }
 
 func (s *CFE) Get(ctx context.Context, in *pb.GetRequest) (*pb.GetResponse, error) {
-	log.Debug().
-		Str("m", "get").
-		Str("ns", in.Namespace).
-		Str("k", in.Key).
-		Send()
 	c := s.getCacheClient(in.Namespace, in.Key, s.ShardCount)
 	r, err := c.Get(ctx, &cspb.GetRequest{
 		Namespace: in.Namespace,
@@ -49,9 +40,8 @@ func (s *CFE) Get(ctx context.Context, in *pb.GetRequest) (*pb.GetResponse, erro
 		}
 	}
 	resp := &pb.GetResponse{
-		Data: &anypb.Any{},
+		Data: r.GetData(),
 	}
-	proto.Merge(resp.Data, r.Data)
 
 	return resp, nil
 }
@@ -61,9 +51,8 @@ func (s *CFE) Set(ctx context.Context, in *pb.SetRequest) (*emptypb.Empty, error
 	req := &cspb.SetRequest{
 		Namespace: in.Namespace,
 		Key:       in.Key,
-		Data:      &anypb.Any{},
+		Data:      in.GetData(),
 	}
-	proto.Merge(req.Data, in.Data)
 	r, err := c.Set(ctx, req)
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
