@@ -63,7 +63,7 @@ type GRPCServerConfig struct {
 	*TLSConfig
 	SkipReflection   bool
 	SkipHealthServer bool
-	SkipMetrics      bool
+	SkipZPages       bool
 }
 
 func (c *TLSConfig) Creds() (credentials.TransportCredentials, error) {
@@ -204,7 +204,7 @@ func NewGRPCServer(grpcCfg *GRPCServerConfig) (*grpc.Server, error) {
 		reflection.Register(s)
 	}
 
-	if !grpcCfg.SkipMetrics {
+	if !grpcCfg.SkipZPages {
 		go func() {
 			mux := http.NewServeMux()
 			zpages.Handle(mux, "/debug")
