@@ -18,6 +18,11 @@ import (
 	"go.opencensus.io/plugin/ocgrpc"
 	"go.opencensus.io/stats/view"
 	"go.opencensus.io/zpages"
+	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
+	"go.opentelemetry.io/otel"
+	stdout "go.opentelemetry.io/otel/exporters/stdout/stdouttrace"
+	"go.opentelemetry.io/otel/propagation"
+	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
@@ -180,6 +185,7 @@ func getServerInterceptorChain() grpc.ServerOption {
 	return middleware.WithUnaryServerChain(
 		tags.UnaryServerInterceptor(),
 		logging.UnaryServerInterceptor(grpczerolog.InterceptorLogger(logger)),
+		otelgrpc.UnaryServerInterceptor(),
 	)
 }
 
@@ -216,4 +222,19 @@ func NewGRPCServer(grpcCfg *GRPCServerConfig) (*grpc.Server, error) {
 	}
 
 	return s, nil
+}
+
+// OTELTraceProvider configures an OpenTelemetry exporter and trace provider.
+func OTELTraceProvider() (*sdktrace.TracerProvider, error) {
+	exporter, err := stdout.New(stdout.WithPrettyPrint())
+	if err != nil {
+		return nil, err
+	}
+	tp := sdktrace.NewTracerProvider(
+		sdktrace.WithSampler(sdktrace.AlwaysSample()),
+		sdktrace.WithBatcher(exporter),
+	)
+	otel.SetTracerProvider(tp)
+	otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(propagation.TraceContext{}, propagation.Baggage{}))
+	return tp, nil
 }

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"net"
 
@@ -37,7 +38,15 @@ func main() {
 	if *debug {
 		zerolog.SetGlobalLevel(zerolog.DebugLevel)
 	}
-
+	tp, err := grpcutils.OTELTraceProvider()
+	if err != nil {
+		log.Fatal().Err(err).Msg("Failed to get OTEL trace provider")
+	}
+	defer func() {
+		if err := tp.Shutdown(context.Background()); err != nil {
+			log.Printf("Error shutting down tracer provider: %v", err)
+		}
+	}()
 	tlsCfg := &grpcutils.TLSConfig{
 		CertFilePath:     *tlsCrtPath,
 		KeyFilePath:      *tlsKeyPath,
