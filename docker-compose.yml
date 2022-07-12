@@ -95,14 +95,36 @@ services:
       - net
     command: |-
       /bin/benchmark_test
-      -test.bench=CFE
+      -test.bench=CFEGetString
       -test.benchmem
-      -test.benchtime=10000x
+      -test.benchtime=10x
       -cfe_server=ganache_cfe_1:40001
       -root_ca_file=/ganache/certs/testca.crt
     profiles:
       - client-benchmarks
-
+  otelcoll:
+    image: otel/opentelemetry-collector:0.55.0
+    command: [ "--config=/etc/otel-collector-config.yaml" ]
+    volumes:
+      - ./monitoring/otel/otel-collector-config.yaml:/etc/otel-collector-config.yaml
+    networks:
+      - net
+    depends_on:
+      - jaeger
+    ports:
+      - "13133:13133" # health_check extension
+      - "4317:4317" # OTLP gRPC receiver
+      - "4318:4318" # OTLP http receiver
+      - "55679:55679" # zpages extension
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    networks:
+      - net
+    depends_on:
+      - cfe
+    ports:
+      - "16686:16686"
+      - "14250"
 networks:
   net:
     driver: bridge

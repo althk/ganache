@@ -1,0 +1,27 @@
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: "0.0.0.0:4317"
+
+processors:
+
+exporters:
+  logging:
+    logLevel: debug
+  jaeger:
+    endpoint: "ganache_jaeger_1:14250"
+    tls:
+      insecure: true
+
+extensions:
+  zpages:
+    endpoint: "0.0.0.0:55679"
+
+service:
+  extensions: [zpages]
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: []
+      exporters: [jaeger, logging]
