@@ -38,12 +38,12 @@ func main() {
 	if *debug {
 		zerolog.SetGlobalLevel(zerolog.DebugLevel)
 	}
-	tp, err := grpcutils.OTELTraceProvider()
+	shutdownFn, err := grpcutils.OTelTraceProvider(pb.Cache_ServiceDesc.ServiceName)
 	if err != nil {
 		log.Fatal().Err(err).Msg("Failed to get OTEL trace provider")
 	}
 	defer func() {
-		if err := tp.Shutdown(context.Background()); err != nil {
+		if err := shutdownFn(context.Background()); err != nil {
 			log.Printf("Error shutting down tracer provider: %v", err)
 		}
 	}()

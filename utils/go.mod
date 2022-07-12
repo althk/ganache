@@ -14,9 +14,14 @@ require (
 )
 
 require (
+	github.com/cenkalti/backoff/v4 v4.1.3 // indirect
 	github.com/go-logr/logr v1.2.3 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
+	github.com/grpc-ecosystem/grpc-gateway/v2 v2.7.0 // indirect
+	go.opentelemetry.io/otel/exporters/otlp/internal/retry v1.8.0 // indirect
+	go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.8.0 // indirect
 	go.opentelemetry.io/otel/trace v1.8.0 // indirect
+	go.opentelemetry.io/proto/otlp v0.18.0 // indirect
 )
 
 require (
@@ -29,7 +34,7 @@ require (
 	github.com/mattn/go-isatty v0.0.14 // indirect
 	go.etcd.io/etcd/api/v3 v3.5.4 // indirect
 	go.etcd.io/etcd/client/pkg/v3 v3.5.4 // indirect
-	go.opentelemetry.io/otel/exporters/stdout/stdouttrace v1.8.0
+	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc v1.8.0
 	go.opentelemetry.io/otel/sdk v1.8.0
 	go.uber.org/atomic v1.7.0 // indirect
 	go.uber.org/multierr v1.6.0 // indirect

@@ -40,12 +40,12 @@ func main() {
 		log.Fatal().Msgf("Error listening on port %v: %v", *port, err)
 	}
 
-	tp, err := grpcutils.OTELTraceProvider()
+	shutdownFn, err := grpcutils.OTelTraceProvider(pb.CFE_ServiceDesc.ServiceName)
 	if err != nil {
 		log.Fatal().Err(err).Msg("Failed to get OTEL trace provider")
 	}
 	defer func() {
-		if err := tp.Shutdown(context.Background()); err != nil {
+		if err := shutdownFn(context.Background()); err != nil {
 			log.Printf("Error shutting down tracer provider: %v", err)
 		}
 	}()
