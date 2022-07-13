@@ -9,13 +9,12 @@ import (
 	csync "github.com/althk/ganache/cacheserver/internal/sync"
 	csmpb "github.com/althk/ganache/csm/proto"
 	etcdutils "github.com/althk/ganache/utils/etcd"
-	grpcutils "github.com/althk/ganache/utils/grpc"
 	"github.com/rs/zerolog/log"
 	"google.golang.org/grpc"
 )
 
 func registerWithCSM(cscfg *config.CSConfig) error {
-	opts, err := grpcutils.GetGRPCDialOpts(cscfg.TLSConfig)
+	opts, err := cscfg.ServerConfig.GetGRPCDialOpts()
 	if err != nil {
 		return err
 	}

@@ -11,7 +11,7 @@ import (
 
 	"github.com/althk/ganache/cfe/internal/server"
 	pb "github.com/althk/ganache/cfe/proto"
-	grpcutils "github.com/althk/ganache/utils/grpc"
+	"github.com/althk/goeasy/grpcutils"
 )
 
 var (
@@ -40,31 +40,31 @@ func main() {
 		log.Fatal().Msgf("Error listening on port %v: %v", *port, err)
 	}
 
-	shutdownFn, err := grpcutils.OTelTraceProvider(pb.CFE_ServiceDesc.ServiceName)
+	tp, err := grpcutils.OTelTraceProvider(pb.CFE_ServiceDesc.ServiceName, "ganache_otelcoll_1:4317")
 	if err != nil {
 		log.Fatal().Err(err).Msg("Failed to get OTEL trace provider")
 	}
 	defer func() {
-		if err := shutdownFn(context.Background()); err != nil {
+		if err := tp.Shutdown(context.Background()); err != nil {
 			log.Printf("Error shutting down tracer provider: %v", err)
 		}
 	}()
+	grpcCfg := &grpcutils.GRPCServerConfig{
+		TLSConfig: &grpcutils.TLSConfig{
+			CertFilePath:     *tlsCrtPath,
+			KeyFilePath:      *tlsKeyPath,
+			ClientCAFilePath: *clientCAPath,
+			SkipTLS:          *skipTLS,
+			RootCAFilePath:   *rootCAPath,
+		},
+		KeepAliveConfig: &grpcutils.KeepAliveConfig{}, // use defaults
+	}
 
-	tlsCfg := &grpcutils.TLSConfig{
-		CertFilePath:     *tlsCrtPath,
-		KeyFilePath:      *tlsKeyPath,
-		ClientCAFilePath: *clientCAPath,
-		SkipTLS:          *skipTLS,
-		RootCAFilePath:   *rootCAPath,
-	}
-	grpcServerCfg := &grpcutils.GRPCServerConfig{
-		TLSConfig: tlsCfg,
-	}
-	cfeServer, err := server.New(tlsCfg, *etcdSpec, *csResolverPrefix, *shards)
+	cfeServer, err := server.New(grpcCfg, *etcdSpec, *csResolverPrefix, *shards)
 	if err != nil {
 		log.Fatal().Err(err).Msg("Failed to create CFE server.")
 	}
-	s, err := grpcutils.NewGRPCServer(grpcServerCfg)
+	s, err := grpcCfg.NewGRPCServer()
 	if err != nil {
 		log.Fatal().Err(err).Msg("Failed to load grpc server opts.")
 	}

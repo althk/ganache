@@ -10,7 +10,7 @@ import (
 
 	"github.com/althk/ganache/csm/internal/server"
 	pb "github.com/althk/ganache/csm/proto"
-	grpcutils "github.com/althk/ganache/utils/grpc"
+	"github.com/althk/goeasy/grpcutils"
 )
 
 var port = flag.Int("port", 0, "cache server port, defaults to 0 which means any available port")
@@ -39,16 +39,16 @@ func main() {
 	if err != nil {
 		log.Fatal().Err(err).Msg("Failed to create new CSM server.")
 	}
-	tlsCfg := &grpcutils.TLSConfig{
-		CertFilePath:     *tlsCrtPath,
-		KeyFilePath:      *tlsKeyPath,
-		ClientCAFilePath: *clientCAPath,
-		SkipTLS:          *skipTLS,
+	grpcCfg := &grpcutils.GRPCServerConfig{
+		TLSConfig: &grpcutils.TLSConfig{
+			CertFilePath:     *tlsCrtPath,
+			KeyFilePath:      *tlsKeyPath,
+			ClientCAFilePath: *clientCAPath,
+			SkipTLS:          *skipTLS,
+		},
+		KeepAliveConfig: &grpcutils.KeepAliveConfig{}, // use defaults
 	}
-	grpcServerCfg := &grpcutils.GRPCServerConfig{
-		TLSConfig: tlsCfg,
-	}
-	s, err := grpcutils.NewGRPCServer(grpcServerCfg)
+	s, err := grpcCfg.NewGRPCServer()
 	if err != nil {
 		log.Fatal().Err(err).Msg("Failed to load grpc server opts.")
 	}

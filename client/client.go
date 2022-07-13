@@ -4,7 +4,7 @@ import (
 	"context"
 
 	pb "github.com/althk/ganache/cfe/proto"
-	grpcutils "github.com/althk/ganache/utils/grpc"
+	"github.com/althk/goeasy/grpcutils"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/anypb"
@@ -26,7 +26,11 @@ func New(cfeSpec, caFilePath string) (CacheClient, error) {
 		RootCAFilePath: caFilePath,
 		NoClientCert:   true,
 	}
-	opts, err := grpcutils.GetGRPCDialOpts(tlsCfg)
+	grpcCfg := &grpcutils.GRPCServerConfig{
+		TLSConfig:       tlsCfg,
+		KeepAliveConfig: &grpcutils.KeepAliveConfig{},
+	}
+	opts, err := grpcCfg.GetGRPCDialOpts()
 	if err != nil {
 		return nil, err
 	}

@@ -97,7 +97,7 @@ services:
       /bin/benchmark_test
       -test.bench=CFEGetString
       -test.benchmem
-      -test.benchtime=10x
+      -test.benchtime=100x
       -cfe_server=ganache_cfe_1:40001
       -root_ca_file=/ganache/certs/testca.crt
     profiles:

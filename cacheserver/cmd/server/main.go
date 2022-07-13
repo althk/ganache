@@ -11,7 +11,7 @@ import (
 	"github.com/althk/ganache/cacheserver/internal/config"
 	"github.com/althk/ganache/cacheserver/internal/server"
 	pb "github.com/althk/ganache/cacheserver/proto"
-	grpcutils "github.com/althk/ganache/utils/grpc"
+	"github.com/althk/goeasy/grpcutils"
 )
 
 var listenAddr = flag.String("listen_addr", ":0", "cache server port, defaults to 0 which means any available port")
@@ -38,21 +38,24 @@ func main() {
 	if *debug {
 		zerolog.SetGlobalLevel(zerolog.DebugLevel)
 	}
-	shutdownFn, err := grpcutils.OTelTraceProvider(pb.Cache_ServiceDesc.ServiceName)
+	tp, err := grpcutils.OTelTraceProvider(pb.Cache_ServiceDesc.ServiceName, "ganache_otelcoll_1:4317")
 	if err != nil {
 		log.Fatal().Err(err).Msg("Failed to get OTEL trace provider")
 	}
 	defer func() {
-		if err := shutdownFn(context.Background()); err != nil {
+		if err := tp.Shutdown(context.Background()); err != nil {
 			log.Printf("Error shutting down tracer provider: %v", err)
 		}
 	}()
-	tlsCfg := &grpcutils.TLSConfig{
-		CertFilePath:     *tlsCrtPath,
-		KeyFilePath:      *tlsKeyPath,
-		ClientCAFilePath: *clientCAPath,
-		SkipTLS:          *skipTLS,
-		RootCAFilePath:   *rootCAPath,
+	grpcCfg := &grpcutils.GRPCServerConfig{
+		TLSConfig: &grpcutils.TLSConfig{
+			CertFilePath:     *tlsCrtPath,
+			KeyFilePath:      *tlsKeyPath,
+			ClientCAFilePath: *clientCAPath,
+			SkipTLS:          *skipTLS,
+			RootCAFilePath:   *rootCAPath,
+		},
+		KeepAliveConfig: &grpcutils.KeepAliveConfig{}, // use defaults
 	}
 	csConfig := &config.CSConfig{
 		CSMSpec:       *csmSpec,
@@ -60,7 +63,7 @@ func main() {
 		MaxCacheBytes: *maxCacheBytes,
 		Shard:         int32(*shard),
 		Addr:          lis.Addr().String(),
-		TLSConfig:     tlsCfg,
+		ServerConfig:  grpcCfg,
 	}
 	cacheServer, err := server.New(csConfig)
 	if err != nil {
@@ -69,10 +72,7 @@ func main() {
 
 	// cache server has been registered with CSM and synced the shard locally
 	// proceed with serving.
-	grpcServerCfg := &grpcutils.GRPCServerConfig{
-		TLSConfig: tlsCfg,
-	}
-	s, err := grpcutils.NewGRPCServer(grpcServerCfg)
+	s, err := grpcCfg.NewGRPCServer()
 	if err != nil {
 		log.Fatal().Err(err).Msg("Failed to load grpc server opts.")
 	}

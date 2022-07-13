@@ -1,6 +1,6 @@
 package config
 
-import grpcutils "github.com/althk/ganache/utils/grpc"
+import "github.com/althk/goeasy/grpcutils"
 
 // Cache Server config
 type CSConfig struct {
@@ -10,5 +10,5 @@ type CSConfig struct {
 	MaxCacheBytes int64
 	Shard         int32
 	Addr          string
-	TLSConfig     *grpcutils.TLSConfig
+	ServerConfig  *grpcutils.GRPCServerConfig
 }
