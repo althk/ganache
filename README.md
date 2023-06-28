@@ -4,7 +4,7 @@
 
 A simple, distributed, in-memory cache service with TLS auth.
 
->**NOTE: doing this for practicing building production grade systems, THIS IS NOWHERE NEAR READY 😅 **
+>**NOTE: doing this for practicing building production grade systems, THIS IS NOWHERE NEAR READY 😅**
 
 ### Benchmarks
 
